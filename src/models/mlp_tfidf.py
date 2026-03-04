@@ -8,6 +8,7 @@ from __future__ import print_function
 
 import torch.nn as nn
 from collections import OrderedDict
+from src import modules
 
 
 class MLP(nn.Module):
@@ -40,11 +41,25 @@ class MLP(nn.Module):
         
         Hint: No softmax layer is needed here. Look at the CrossEntropyLoss module for loss calculation.
         """
+        super().__init__()
 
-    MLP = Sequential()
-    MLP.add(Dense('fill in here', input_shape=('fill in here', ), activation='relu'))
-    MLP.add(Dropout(0.5))
-    MLP.add(Dense(y_train.shape[1], activation='softmax'))
+        layers = []
+        dims = [n_inputs] + list(n_hidden) + [n_classes]
+
+        # If n_hidden is empty => dims = [n_inputs, n_classes] => single LinearModule
+        for i in range(len(dims) - 1):
+            in_dim = dims[i]
+            out_dim = dims[i + 1]
+
+            is_output_layer = (i == len(dims) - 2)
+            layers.append(LinearModule(in_dim, out_dim, input_layer=(i == 0)))
+
+            if not is_output_layer:
+                if use_batch_norm:
+                    layers.append(nn.BatchNorm1d(out_dim))
+                layers.append(nn.ReLU())   
+
+        self.layers = nn.Sequential(*layers)
     
     def forward(self, x):
         """
@@ -60,14 +75,7 @@ class MLP(nn.Module):
         Implement forward pass of the network.
         """
 
-        #######################
-        # PUT YOUR CODE HERE  #
-        #######################
-        out = forward(x)
-        #######################
-        # END OF YOUR CODE    #
-        #######################
-
+        out = self.layers(x)
         return out
 
     @property
