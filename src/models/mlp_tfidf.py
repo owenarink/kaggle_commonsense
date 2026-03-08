@@ -8,7 +8,7 @@ from __future__ import print_function
 
 import torch.nn as nn
 from collections import OrderedDict
-from src import modules
+from src.modules import LinearModule
 
 
 class MLP(nn.Module):

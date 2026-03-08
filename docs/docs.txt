@@ -1,0 +1,3 @@
+ python -m src.processing && python -m src.features.tfidf && python -m src.train_model_wPairwise && python -m src.analysis.plot_confusion_mlp_pairwise && python -m src.analysis.plot_feature_stats_mlp_pairwise &&  python -m src.analysis.plot_confusion && python -m src.analysis.plot_feature_stats 
+
+

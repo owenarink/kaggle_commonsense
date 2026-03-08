@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.init as init
 
-class LinearModule(object):
+class LinearModule(nn.Module):
     """
     Linear module. Applies a linear transformation to the input data.
     """

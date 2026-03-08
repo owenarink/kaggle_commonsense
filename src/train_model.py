@@ -1,7 +1,17 @@
-from models import mlp_tfidf
-from features import tfidf
-import preprocessing
+from src.models.mlp_tfidf import MLP
+from src.features.tfidf import get_tfidf
+from src.processing import preprocess
 from torch.utils.data import DataLoader, TensorDataset
+from src.features.tfidf import get_tfidf
+import pandas as pd
+import numpy as np
+import torch
+import torch.nn as nn
+import csv
+import os
+import torch
+import torch.nn as nn
+from src.eval import evaluate_model
 
 
 def load_prep_data():
@@ -14,16 +24,17 @@ def load_prep_data():
 
     return x_train, x_val, y_train, y_val
 
-def train():
-    train_dataset = TensorDataset(torch.tensor(x_train).float(), torch.tensor(y_train).float())
-    val_dataset = TensorDataset(torch.tensor(x_val).float(), torch.tensor(y_val).float())
+def train(x_train, x_val, y_train, y_val):
+    train_dataset = TensorDataset(torch.tensor(x_train).float(), torch.tensor(y_train).long())
+    val_dataset = TensorDataset(torch.tensor(x_val).float(), torch.tensor(y_val).long())
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     # model
-    model = MLP(n_inputs=x_train.shape[1], n_hidden=64, output_size=1)
+    model = MLP(n_inputs=x_train.shape[1], n_hidden=[64], n_classes=3)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
     loss_crit = nn.CrossEntropyLoss()
 
     epochs = 10
@@ -39,8 +50,24 @@ def train():
             loss.backward()
             optimizer.step()
 
-        print(f"epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+        # ---- ADD THIS: print accuracies after each epoch ----
+        train_acc = evaluate_model(model, train_loader)
+        val_acc = evaluate_model(model, val_loader)
+        print(f"epoch [{epoch+1}/{epochs}] loss={loss.item():.4f} train_acc={train_acc:.4f} val_acc={val_acc:.4f}")
+
+    # ---- ADD THIS: save model after training ----
+    os.makedirs("checkpoints", exist_ok=True)
+    torch.save(model.state_dict(), "checkpoints/mlp_tfidf.pt")
+    print("Saved model to checkpoints/mlp_tfidf.pt")
 
 if __name__ == "__main__":
-    load_prep_data()
-    train()
+    x_train, x_val, y_train, y_val = load_prep_data()   
+    print('------------------- TRAIN MODEL ----------------')
+    print('train_model, after preprocess and get_tfidf: x_train', x_train)
+    print('train_model, after preprocess and get_tfidf: x_val', x_val)
+    print('train_model, after preprocess and get_tfidf: y_train', y_train)
+    print('train_model, after preprocess and get_tfidf: y_val', y_train)
+ 
+    train(x_train, x_val, y_train, y_val)
+
+
