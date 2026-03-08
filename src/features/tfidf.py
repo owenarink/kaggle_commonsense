@@ -29,7 +29,7 @@ class get_tfidf:
                 train_set["OptionB"] + " [SEP] " +
                 train_set["OptionC"]
             )
-        tfidf = TfidfVectorizer(binary=True, ngram_range=(1, 2))
+        tfidf = TfidfVectorizer(binary=True, ngram_range=(1, 2), max_features=20000, min_df=2)
         x = tfidf.fit_transform(train_set["answer"]).toarray().astype(np.float32)
         return x
 

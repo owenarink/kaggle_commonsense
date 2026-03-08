@@ -1,3 +1,61 @@
+## Standard libraries
+import os
+import numpy as np
+import random
+import math
+import json
+from functools import partial
+
+## Imports for plotting
+import matplotlib.pyplot as plt
+plt.set_cmap('cividis')
+from IPython.display import set_matplotlib_formats
+set_matplotlib_formats('svg', 'pdf') # For export
+from matplotlib.colors import to_rgb
+import matplotlib
+matplotlib.rcParams['lines.linewidth'] = 2.0
+import seaborn as sns
+sns.reset_orig()
+
+## tqdm for loading bars
+from tqdm.notebook import tqdm
+
+## PyTorch
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils.data as data
+import torch.optim as optim
+
+## Torchvision
+import torchvision
+from torchvision.datasets import CIFAR100
+from torchvision import transforms
+
+
+# PyTorch Lightning
+try:
+    import pytorch_lightning as pl
+except ModuleNotFoundError: # Google Colab does not have PyTorch Lightning installed by default. Hence, we do it here if necessary
+    import pytorch_lightning as pl
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+
+
+def scaled_dot_product(q, k, v, mask=None):
+    d_k = q.size()[-1]
+    attn_logits = torch.matmul(q, k.transpose(-2, -1))
+    attn_logits = attn_logits / math.sqrt(d_k)
+    if mask is not None:
+        attn_logits = attn_logits.masked_fill(mask == 0, -9e15)
+    attention = F.softmax(attn_logits, dim=-1)
+    values = torch.matmul(attention, v)
+    return values, attention
+
+
+# Output shape supports (batch_size, number of heads, seq length, seq length)
+# If 2D: broadcasted over batch size and number of heads
+# If 3D: broadcasted over number of heads
+# If 4D: leave as is
 def expand_mask(mask):
     assert mask.ndim >= 2, "Mask must be at least 2-dimensional with seq_length x seq_length"
     if mask.ndim == 3:
@@ -5,6 +63,7 @@ def expand_mask(mask):
     while mask.ndim < 4:
         mask = mask.unsqueeze(0)
     return mask
+
 
 class MultiheadAttention(nn.Module):
 
@@ -51,49 +110,6 @@ class MultiheadAttention(nn.Module):
             return o, attention
         else:
             return o
-
-
-class EncoderBlock(nn.Module):
-
-    def __init__(self, input_dim, num_heads, dim_feedforward, dropout=0.0):
-        """
-        Inputs:
-            input_dim - Dimensionality of the input
-            num_heads - Number of heads to use in the attention block
-            dim_feedforward - Dimensionality of the hidden layer in the MLP
-            dropout - Dropout probability to use in the dropout layers
-        """
-        super().__init__()
-
-        # Attention layer
-        self.self_attn = MultiheadAttention(input_dim, input_dim, num_heads)
-
-        # Two-layer MLP
-        self.linear_net = nn.Sequential(
-            nn.Linear(input_dim, dim_feedforward),
-            nn.Dropout(dropout),
-            nn.ReLU(inplace=True),
-            nn.Linear(dim_feedforward, input_dim)
-        )
-
-        # Layers to apply in between the main layers
-        self.norm1 = nn.LayerNorm(input_dim)
-        self.norm2 = nn.LayerNorm(input_dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x, mask=None):
-        # Attention part
-        attn_out = self.self_attn(x, mask=mask)
-        x = x + self.dropout(attn_out)
-        x = self.norm1(x)
-
-        # MLP part
-        linear_out = self.linear_net(x)
-        x = x + self.dropout(linear_out)
-        x = self.norm2(x)
-
-        return x
-
 
 class TransformerEncoder(nn.Module):
 
@@ -142,3 +158,28 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:, :x.size(1)]
         return x
 
+if __name__ == "__main__":
+    seq_len, d_k = 3, 2
+    pl.seed_everything(42)
+    q = torch.randn(seq_len, d_k)
+    k = torch.randn(seq_len, d_k)
+    v = torch.randn(seq_len, d_k)
+    values, attention = scaled_dot_product(q, k, v)
+    print("Q\n", q)
+    print("K\n", k)
+    print("V\n", v)
+    print("Values\n", values)
+    print("Attention\n", attention)
+
+    encod_block = PositionalEncoding(d_model=48, max_len=96)
+    pe = encod_block.pe.squeeze().T.cpu().numpy()
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8,3))
+    pos = ax.imshow(pe, cmap="RdGy", extent=(1,pe.shape[1]+1,pe.shape[0]+1,1))
+    fig.colorbar(pos, ax=ax)
+    ax.set_xlabel("Position in sequence")
+    ax.set_ylabel("Hidden dimension")
+    ax.set_title("Positional encoding over hidden dimensions")
+    ax.set_xticks([1]+[i*10 for i in range(1,1+pe.shape[1]//10)])
+    ax.set_yticks([1]+[i*10 for i in range(1,1+pe.shape[0]//10)])
+    plt.show()
