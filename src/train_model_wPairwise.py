@@ -70,9 +70,7 @@ def train_multiclass(x_train, x_val, y_train, y_val):
     print("Saved multiclass model to checkpoints/mlp_tfidf.pt")
 
 
-# -------------------------
-# Pairwise (new)
-# -------------------------
+# Pairwise
 
 OPTIONS = ["A", "B", "C"]
 
