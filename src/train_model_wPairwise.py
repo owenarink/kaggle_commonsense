@@ -13,10 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from src.eval import evaluate_model  # your existing multiclass evaluator
 
-
-# -------------------------
 # Multiclass (your current)
-# -------------------------
 
 def load_prep_data_multiclass():
     x_train_raw = pd.read_csv("data/train_data.csv")

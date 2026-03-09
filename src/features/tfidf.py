@@ -44,7 +44,6 @@ class get_tfidf:
         else:
             labels = np.array(train_set).astype(str)
 
-        print("labels dtype:", labels.dtype, "shape:", labels.shape, "first 5:", labels[:5])
         y = np.array([mapping[l] for l in labels], dtype=np.int64)
         return y    
 
@@ -93,3 +92,7 @@ if __name__ == "__main__":
     print("row0 nonzero count:", len(nz))
     print("row0 indices:", nz[:20])
     print("row0 values:", row0[nz[:20]])
+
+    
+    print('tfidf completed\n')
+    print('------------------------------------------------')

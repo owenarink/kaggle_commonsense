@@ -1,7 +1,9 @@
 import numpy as np
 import csv 
 import pandas as pd
-
+import re
+from collections import Counter
+from sklearn.model_selection import train_test_split
 
 # sampel for processing
 def preprocess(train_data_csv: pd.DataFrame, test_data_csv: pd.DataFrame, answers_csv: pd.DataFrame): # do some preprocessing steps here
@@ -42,6 +44,100 @@ def preprocess(train_data_csv: pd.DataFrame, test_data_csv: pd.DataFrame, answer
 
     return train_df, test_df
 
+OPTIONS = ["A", "B", "C"]
+
+def simple_tokenize(text: str):
+    return re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?|\d+|[^\s]", text.lower())
+
+def build_vocab(texts, min_freq=2, max_vocab=50000):
+    counter = Counter()
+    for t in texts:
+        counter.update(simple_tokenize(t))
+
+    vocab = {"<pad>": 0, "<unk>": 1}
+    for tok, freq in counter.most_common():
+        if freq < min_freq:
+            break
+        if tok in vocab:
+            continue
+        vocab[tok] = len(vocab)
+        if len(vocab) >= max_vocab:
+            break
+    return vocab
+
+def encode_text(text: str, vocab: dict, max_len: int):
+    toks = simple_tokenize(text)
+    ids = [vocab.get(tok, vocab["<unk>"]) for tok in toks][:max_len]
+    if len(ids) < max_len:
+        ids += [vocab["<pad>"]] * (max_len - len(ids))
+    return ids
+
+def make_text_multiclass(df: pd.DataFrame):
+    return (
+        df["FalseSent"].astype(str) + " [SEP] " +
+        df["OptionA"].astype(str) + " [SEP] " +
+        df["OptionB"].astype(str) + " [SEP] " +
+        df["OptionC"].astype(str)
+    ).tolist()
+
+def make_pairwise_rows(df: pd.DataFrame):
+    rows = []
+    for _, r in df.iterrows():
+        s = str(r["FalseSent"])
+        gold = str(r["label"]).strip()
+        gid = r["id"]
+        for opt in OPTIONS:
+            rows.append({
+                "group_id": gid,
+                "opt": opt,
+                "text": f"{s} [SEP] {str(r[f'Option{opt}'])}",
+                "y": 1 if opt == gold else 0
+            })
+    return pd.DataFrame(rows)
+
+def preprocess_cnn(train_df: pd.DataFrame, seed=40, mode="multiclass", max_len=128, min_freq=2, max_vocab=50000):
+    if mode == "multiclass":
+        tr_rows, va_rows = train_test_split(
+            train_df, test_size=0.2, random_state=seed, stratify=train_df["label"].astype(str)
+        )
+
+        tr_texts = make_text_multiclass(tr_rows)
+        va_texts = make_text_multiclass(va_rows)
+
+        vocab = build_vocab(tr_texts, min_freq=min_freq, max_vocab=max_vocab)
+
+        X_tr = np.array([encode_text(t, vocab, max_len) for t in tr_texts], dtype=np.int64)
+        X_va = np.array([encode_text(t, vocab, max_len) for t in va_texts], dtype=np.int64)
+
+        mapping = {"A": 0, "B": 1, "C": 2}
+        y_tr = np.array([mapping[x] for x in tr_rows["label"].astype(str).str.strip().values], dtype=np.int64)
+        y_va = np.array([mapping[x] for x in va_rows["label"].astype(str).str.strip().values], dtype=np.int64)
+
+        return X_tr, X_va, y_tr, y_va, vocab
+
+    if mode == "pairwise":
+        tr_rows, va_rows = train_test_split(
+            train_df, test_size=0.2, random_state=seed, stratify=train_df["label"].astype(str)
+        )
+
+        tr_pairs = make_pairwise_rows(tr_rows)
+        va_pairs = make_pairwise_rows(va_rows)
+
+        vocab = build_vocab(tr_pairs["text"].tolist(), min_freq=min_freq, max_vocab=max_vocab)
+
+        X_tr = np.array([encode_text(t, vocab, max_len) for t in tr_pairs["text"].tolist()], dtype=np.int64)
+        X_va = np.array([encode_text(t, vocab, max_len) for t in va_pairs["text"].tolist()], dtype=np.int64)
+
+        y_tr = tr_pairs["y"].values.astype(np.float32)
+        y_va = va_pairs["y"].values.astype(np.float32)
+
+        va_group_ids = va_pairs["group_id"].values
+        va_opts = va_pairs["opt"].values
+        va_gold = va_rows.set_index("id")["label"].to_dict()
+
+        return X_tr, X_va, y_tr, y_va, vocab, va_group_ids, va_opts, va_gold
+
+    raise ValueError("mode must be 'multiclass' or 'pairwise'")
 
 if __name__ == "__main__":
     # train_data_csv
@@ -70,5 +166,6 @@ if __name__ == "__main__":
     print("train_df columns: ", train_df.columns.tolist())
     print("test_df columns: ", test_df.columns.tolist())
 
-
+    print('PROCESSING COMPLETED\n')
+    print('------------------------------------------------')
 

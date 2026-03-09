@@ -70,4 +70,7 @@ if __name__ == "__main__":
  
     train(x_train, x_val, y_train, y_val)
 
+    print('train_model (MLP+TFIDF WITHOUT PAIRWISE SCORER) completed\n')
+    print('------------------------------------------------')
+
 
