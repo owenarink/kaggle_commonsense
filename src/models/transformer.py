@@ -179,21 +179,21 @@ class TextTransformer(nn.Module):
         self.out = nn.Linear(model_dim, num_classes)
 
     def forward(self, x_ids):
-        # x_ids: [B, L] long
-        pad_mask = (x_ids != self.pad_idx).to(x_ids.device)  # [B, L] with 1 for real tokens
+        # inside forward(self, x_ids):
+        pad_mask = (x_ids != self.pad_idx)  # [B, L] bool
 
-        x = self.embedding(x_ids)                # [B, L, D]
-        x = self.positional_encoding(x)          # [B, L, D]
-        x = self.transformer(x, mask=pad_mask)   # mask will be expanded to [B,1,1,L]
+        x = self.embedding(x_ids)           # [B, L, D]
+        x = self.positional_encoding(x)
+        x = self.transformer(x, mask=pad_mask)   # only if your transformer supports mask
 
-        if self.pooling == "cls":
-            pooled = x[:, 0, :]                  # [B, D]
-        else:
-            denom = pad_mask.sum(dim=1, keepdim=True).clamp_min(1)      # [B,1]
-            pooled = (x * pad_mask.unsqueeze(-1)).sum(dim=1) / denom    # [B, D]
-
-        pooled = self.dropout(pooled)
-        logits = self.out(pooled)                # [B, C]
+        if self.pooling == "mean":
+            m = pad_mask.unsqueeze(-1).float()         # [B, L, 1]
+            denom = m.sum(dim=1).clamp(min=1.0)        # [B, 1]
+            x = (x * m).sum(dim=1) / denom             # [B, D]
+        elif self.pooling == "cls":
+            x = x[:, 0, :]
+        # then linear head
+        logits = self.out(x)
         return logits
 
     @torch.no_grad()

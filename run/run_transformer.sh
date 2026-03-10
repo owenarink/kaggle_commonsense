@@ -45,5 +45,5 @@ run_step_chatty "3/5 src.models.transformer" python -m src.models.transformer
 run_step_chatty "4/5 src.train_model_transformer"                         python -m src.train_model_transformer
 
 
-run_step_quiet  "5/5 plot_feature_stats"                     python -m src.submits
+run_step_quiet  "5/5 submits"                     python -m src.submits
 echo "All steps completed. 🍺"

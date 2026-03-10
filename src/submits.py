@@ -1,4 +1,5 @@
 from dependencies.dependencies import *
+import json, os
 
 IDX2LBL = {0: "A", 1: "B", 2: "C"}
 OPTIONS = ["A", "B", "C"]
@@ -229,34 +230,55 @@ def _textresnet_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df, s
     print(f"N = {total}")
 
 
-def _transformer_pairwise_category_accuracy(
-    tag: str,
-    ckpt_path: str,
-    train_df,
-    seed: int = 40,
-    max_len: int = 128,
-    min_freq: int = 2,
-    max_vocab: int = 50000,
-):
+
+def _load_transformer_vocab_and_meta():
+    vocab_path = "checkpoints/transformer_pairwise_vocab.json"
+    meta_path  = "checkpoints/transformer_pairwise_meta.json"
+
+    if not os.path.exists(vocab_path) or not os.path.exists(meta_path):
+        raise FileNotFoundError(
+            "Missing transformer vocab/meta. Train first so these exist:\n"
+            f" - {vocab_path}\n - {meta_path}"
+        )
+
+    with open(vocab_path, "r") as f:
+        vocab = json.load(f)
+    with open(meta_path, "r") as f:
+        meta = json.load(f)
+
+    return vocab, meta
+
+
+def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
     if not os.path.exists(ckpt_path):
         print(f"[skip] {tag}: missing {ckpt_path}")
         return
 
-    from src.processing import preprocess_cnn
     from src.models.transformer import TextTransformer
+    from src.processing import make_pairwise_rows, encode_text
 
-    X_tr, X_va, y_tr, y_va, vocab, va_group_ids, va_opts, va_gold = preprocess_cnn(
-        train_df=train_df,
-        seed=seed,
-        mode="pairwise",
-        max_len=max_len,
-        min_freq=min_freq,
-        max_vocab=max_vocab,
+    vocab, meta = _load_transformer_vocab_and_meta()
+    seed    = int(meta["seed"])
+    max_len = int(meta["max_len"])
+
+    # Recreate the SAME val split as training
+    tr_rows, va_rows = train_test_split(
+        train_df,
+        test_size=0.2,
+        random_state=seed,
+        stratify=train_df["label"].astype(str),
     )
 
-    hp = infer_transformer_hparams(ckpt_path)
+    va_pairs = make_pairwise_rows(va_rows)
+    X_va = np.array([encode_text(t, vocab, max_len) for t in va_pairs["text"].tolist()], dtype=np.int64)
 
+    va_group_ids = va_pairs["group_id"].values
+    va_opts = va_pairs["opt"].values
+    va_gold = va_rows.set_index("id")["label"].to_dict()
+
+    hp = infer_transformer_hparams(ckpt_path)
     device = get_device()
+
     model = TextTransformer(
         vocab_size=len(vocab),
         num_classes=1,
@@ -275,26 +297,12 @@ def _transformer_pairwise_category_accuracy(
 
     batch_size = 256
     scores_chunks = []
-    try:
-        with torch.no_grad():
-            for start in range(0, len(X_va), batch_size):
-                end = min(start + batch_size, len(X_va))
-                xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)
-                logits = model(xb).squeeze(1)
-                scores_chunks.append(torch.sigmoid(logits).cpu().numpy())
-    except RuntimeError as e:
-        if "out of memory" in str(e).lower() and device.type == "mps":
-            device = torch.device("cpu")
-            model = model.to(device)
-            scores_chunks = []
-            with torch.no_grad():
-                for start in range(0, len(X_va), batch_size):
-                    end = min(start + batch_size, len(X_va))
-                    xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)
-                    logits = model(xb).squeeze(1)
-                    scores_chunks.append(torch.sigmoid(logits).cpu().numpy())
-        else:
-            raise
+    with torch.no_grad():
+        for start in range(0, len(X_va), batch_size):
+            end = min(start + batch_size, len(X_va))
+            xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)
+            logits = model(xb).squeeze(1)
+            scores_chunks.append(torch.sigmoid(logits).cpu().numpy())
 
     scores = np.concatenate(scores_chunks, axis=0)
 
@@ -316,6 +324,60 @@ def _transformer_pairwise_category_accuracy(
     print(f"N = {total}")
 
 
+def _make_submission_transformer_pairwise(train_df, test_df, out_dir: str):
+    ckpt_path = "checkpoints/transformer_pairwise.pt"
+    if not os.path.exists(ckpt_path):
+        print(f"[skip] transformer_pairwise submit: missing {ckpt_path}")
+        return
+
+    from src.models.transformer import TextTransformer
+    from src.processing import encode_text
+
+    vocab, meta = _load_transformer_vocab_and_meta()
+    max_len = int(meta["max_len"])
+
+    # Build test pair texts (same as everywhere else)
+    te_texts, te_gids, te_opts = _build_pairwise_texts(test_df)
+    X_te = np.array([encode_text(t, vocab, max_len) for t in te_texts], dtype=np.int64)
+
+    hp = infer_transformer_hparams(ckpt_path)
+    device = get_device()
+
+    model = TextTransformer(
+        vocab_size=len(vocab),
+        num_classes=1,
+        pad_idx=hp["pad_idx"],
+        model_dim=hp["model_dim"],
+        num_heads=hp["num_heads"],
+        num_layers=hp["num_layers"],
+        ff_mult=hp["ff_mult"],
+        dropout=hp["dropout"],
+        max_len=hp["max_len"],
+        pooling=hp["pooling"],
+    ).to(device)
+
+    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    model.eval()
+
+    batch_size = 256
+    best = {}
+
+    with torch.no_grad():
+        for start in range(0, len(X_te), batch_size):
+            end = min(start + batch_size, len(X_te))
+            xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)
+            logits = model(xb).squeeze(1)
+            scores = torch.sigmoid(logits).cpu().numpy()
+
+            for s, gid, opt in zip(scores, te_gids[start:end], te_opts[start:end]):
+                s = float(s)
+                if gid not in best or s > best[gid][0]:
+                    best[gid] = (s, opt)
+
+    ids = test_df["id"].tolist()
+    answers = [best[i][1] for i in ids]
+    out = pd.DataFrame({"id": ids, "answer": answers})
+    _save_csv(out, os.path.join(out_dir, "submission_transformer_pairwise.csv"))
 def print_all_validation_accuracies(train_df, test_df):
     _print_multiclass_val_accuracy(
         tag="mlp_tfidf",

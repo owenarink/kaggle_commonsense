@@ -1,4 +1,5 @@
 from dependencies.dependencies import *
+import json, os
 
 OPTIONS = ["A", "B", "C"]
 
@@ -6,7 +7,6 @@ def pairwise_accuracy_from_logits(logits: torch.Tensor, y_true: torch.Tensor) ->
     probs = torch.sigmoid(logits)
     preds = (probs >= 0.5).long()
     return (preds.view(-1) == y_true.long().view(-1)).float().mean().item()
-
 
 def category_accuracy_from_pair_scores(scores: np.ndarray, group_ids: np.ndarray, opts: np.ndarray, gold_by_id: dict) -> float:
     best = {}
@@ -22,7 +22,6 @@ def category_accuracy_from_pair_scores(scores: np.ndarray, group_ids: np.ndarray
             correct += 1
 
     return correct / total if total > 0 else 0.0
-
 
 def load_prep_data_pairwise(seed=40, max_len=128, min_freq=2, max_vocab=50000):
     x_train_raw = pd.read_csv("data/train_data.csv")
@@ -40,6 +39,15 @@ def load_prep_data_pairwise(seed=40, max_len=128, min_freq=2, max_vocab=50000):
         min_freq=min_freq,
         max_vocab=max_vocab,
     )
+
+    os.makedirs("checkpoints", exist_ok=True)
+    with open("checkpoints/transformer_pairwise_vocab.json", "w") as f:
+        json.dump(vocab, f)
+
+    meta = {"seed": seed, "max_len": max_len, "min_freq": min_freq, "max_vocab": max_vocab}
+    with open("checkpoints/transformer_pairwise_meta.json", "w") as f:
+        json.dump(meta, f)
+
     print("y_tr mean (should be ~0.333):", float(np.mean(y_tr)))
     print("first 6 y_tr:", y_tr[:6])
     print('------------------- TRAIN PAIRWISE TRANSFORMER MODEL ----------------')
@@ -50,7 +58,6 @@ def load_prep_data_pairwise(seed=40, max_len=128, min_freq=2, max_vocab=50000):
     print('vocab size:', len(vocab))
 
     return X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va_gold, vocab
-
 
 def train_pairwise_transformer(X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va_gold, vocab):
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -76,13 +83,21 @@ def train_pairwise_transformer(X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va
         pooling="mean",
     ).to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
-    loss_crit = nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-2)
+
+    pos = float(np.sum(y_tr))
+    neg = float(len(y_tr) - pos)
+    pos_weight = torch.tensor([neg / max(pos, 1.0)], device=device)
+    loss_crit = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    print("pos_weight:", float(pos_weight))
 
     epochs = 20
+    best_val_cat = -1.0
 
     total_steps = epochs * len(train_loader)
     total_pbar = tqdm(total=total_steps, desc="Total", unit="batch")
+
+    y_va_t = torch.tensor(y_va)
 
     for epoch in range(epochs):
         model.train()
@@ -114,21 +129,24 @@ def train_pairwise_transformer(X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va
                 all_logits.append(lg)
         all_logits = torch.cat(all_logits, dim=0)
 
-        val_pair_acc = pairwise_accuracy_from_logits(all_logits, torch.tensor(y_va))
+        val_pair_acc = pairwise_accuracy_from_logits(all_logits, y_va_t)
         val_scores = torch.sigmoid(all_logits).numpy()
         val_cat_acc = category_accuracy_from_pair_scores(val_scores, va_group_ids, va_opts, va_gold)
 
-        print(f"[PAIR-TRANSFORMER] epoch [{epoch+1}/{epochs}] loss={loss.item():.4f} val_pair_acc={val_pair_acc:.4f} val_cat_acc={val_cat_acc:.4f}")
+        print(f"[PAIR-TRANSFORMER] epoch [{epoch+1}/{epochs}] loss={loss.item():.4f} "
+              f"val_pair_acc={val_pair_acc:.4f} val_cat_acc={val_cat_acc:.4f}")
+
+        if val_cat_acc > best_val_cat:
+            best_val_cat = val_cat_acc
+            os.makedirs("checkpoints", exist_ok=True)
+            torch.save(model.state_dict(), "checkpoints/transformer_pairwise.pt")
+            print(f"Saved BEST transformer (val_cat_acc={best_val_cat:.4f})")
 
     total_pbar.close()
-
-    os.makedirs("checkpoints", exist_ok=True)
-    torch.save(model.state_dict(), "checkpoints/transformer_pairwise.pt")
-    print("Saved pairwise Transformer model to checkpoints/transformer_pairwise.pt")
-
+    print("Done. Best val_cat_acc:", best_val_cat)
 
 if __name__ == "__main__":
     X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va_gold, vocab = load_prep_data_pairwise(seed=40)
     train_pairwise_transformer(X_tr, X_va, y_tr, y_va, va_group_ids, va_opts, va_gold, vocab)
-    print('train_model_transformer_pairwise completed\n')
-    print('------------------------------------------------')
+    print("train_model_transformer_pairwise completed\n")
+    print("------------------------------------------------")

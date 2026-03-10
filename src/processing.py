@@ -55,7 +55,8 @@ def build_vocab(texts, min_freq=2, max_vocab=50000):
         counter.update(simple_tokenize(t))
 
     vocab = {"<pad>": 0, "<unk>": 1}
-    for tok, freq in counter.most_common():
+    
+    for tok, freq in sorted(counter.items(), key=lambda x: (-x[1], x[0])):
         if freq < min_freq:
             break
         if tok in vocab:
