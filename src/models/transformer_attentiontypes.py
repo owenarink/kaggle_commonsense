@@ -263,6 +263,8 @@ class Seq2SeqTransformerEncoder(nn.Module):
         return self.encoder.get_attention_maps(x, mask=pad_mask)
 
 
+
+
 if __name__ == "__main__":
     B, L = 2, 8
     vocab_size = 100
@@ -276,3 +278,5 @@ if __name__ == "__main__":
     s2s = Seq2SeqTransformerEncoder(vocab_size=vocab_size, num_classes=vocab_size, pad_idx=0, model_dim=64, num_heads=4, num_layers=2, max_len=128)
     y2 = s2s(x)
     print("Seq2SeqTransformerEncoder logits:", y2.shape)  # [B, L, vocab_size]
+
+    dis_att = 

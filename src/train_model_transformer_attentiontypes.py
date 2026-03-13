@@ -1,3 +1,4 @@
+
 from dependencies.dependencies import *
 import os, math, json
 import numpy as np
@@ -16,48 +17,31 @@ def get_device():
     return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
-def make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.05):
-    """
-    Warmup to 1.0, then cosine decay to min_lr_ratio.
-    Clamps step/progress so LR doesn't oscillate if you train past total_steps.
-    """
-    def lr_lambda(step: int):
-        step = min(step, total_steps)
+def make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.1):
+    def lr_lambda(step):
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
         progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-        progress = min(max(progress, 0.0), 1.0)
         cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
         return min_lr_ratio + (1.0 - min_lr_ratio) * cosine
-
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-def token_dropout(x_ids: torch.Tensor, pad_id: int, unk_id: int, p: float, protected_ids=()):
+
+def token_dropout(x_ids: torch.Tensor, pad_id: int, unk_id: int, p: float):
     if p <= 0:
         return x_ids
     x = x_ids.clone()
-
-    mask = (x != pad_id)
-
-    # protect special tokens (cls/sep/eos)
-    if protected_ids:
-        prot = torch.zeros_like(x, dtype=torch.bool)
-        for pid in protected_ids:
-            prot |= (x == int(pid))
-        mask &= ~prot
-
-    mask &= (torch.rand_like(x.float()) < p)
+    mask = (x != pad_id) & (torch.rand_like(x.float()) < p)
     x[mask] = unk_id
     return x
 
 @torch.no_grad()
 def grouped_val_metrics(model, X_va, y_va, device, batch_size=128):
     """
-    Returns (val_cat_acc, val_loss).
-    Uses CE without label_smoothing for reporting/stopping signal.
+    Returns: (val_cat_acc, val_loss)
     """
     model.eval()
-    ce = nn.CrossEntropyLoss()
+    val_crit = nn.CrossEntropyLoss()  # no label smoothing for metric reporting
 
     ds = TensorDataset(
         torch.tensor(X_va, dtype=torch.long),
@@ -65,29 +49,29 @@ def grouped_val_metrics(model, X_va, y_va, device, batch_size=128):
     )
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
-    correct = 0
     total = 0
-    total_loss = 0.0
+    correct = 0
+    loss_sum = 0.0
 
     for xb, yb in loader:
-        xb = xb.to(device)   # [B,3,L]
-        yb = yb.to(device)   # [B]
+        xb = xb.to(device)  # [B,3,L]
+        yb = yb.to(device)  # [B]
+
         B, K, L = xb.shape
+        scores = model(xb.view(B * K, L)).view(B, K)   # [B,3]
+        loss = val_crit(scores, yb)
 
-        scores = model(xb.view(B*K, L)).view(B, K)  # [B,3]
-        loss = ce(scores, yb)
-
-        total_loss += float(loss.item()) * B
         pred = torch.argmax(scores, dim=1)
         correct += (pred == yb).sum().item()
         total += B
+        loss_sum += float(loss.item()) * B
 
         if device.type == "mps":
             torch.mps.empty_cache()
 
-    val_acc = correct / max(1, total)
-    val_loss = total_loss / max(1, total)
-    return val_acc, val_loss
+    acc = correct / max(total, 1)
+    avg_loss = loss_sum / max(total, 1)
+    return acc, avg_loss
 
 
 def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len=128, vocab_size=12000, min_freq=2):
@@ -99,12 +83,9 @@ def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len
         stratify=train_df["label"].astype(str),
     )
 
-    from src.tokenizer_bbpe import ensure_bbpe, load_bbpe, DEFAULT_TOK_PATH, DEFAULT_META_PATH
-
-    ensure_bbpe(train_df, tokenizer_path=DEFAULT_TOK_PATH, meta_path=DEFAULT_META_PATH, vocab_size=vocab_size, min_freq=min_freq)
-    tok, meta = load_bbpe(DEFAULT_TOK_PATH, DEFAULT_META_PATH)
-    pad_id = meta["pad_id"]
-    unk_id = meta["unk_id"]
+    # make sure tokenizer exists (train it once). You can train on FULL train_df for best tokenizer coverage.
+    ensure_bbpe(train_df, tokenizer_path="checkpoints/bbpe_tokenizer.json", vocab_size=vocab_size, min_freq=min_freq)
+    tok, pad_id, unk_id = load_bbpe("checkpoints/bbpe_tokenizer.json")
 
     # encode grouped: [N,3,L]
     X_tr = encode_grouped_bbpe(tr_rows, tok, max_len=max_len, pad_id=pad_id)
@@ -161,7 +142,7 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
     num_layers = 4
     ff_mult = 4
     dropout = 0.35
-    pooling = "mean"
+    pooling = "cls"
     max_len_pe = 512
 
     model = TextTransformer(
@@ -181,25 +162,18 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
     criterion = nn.CrossEntropyLoss(label_smoothing=0.10)
 
     base_lr = 6e-5
-    optimizer = torch.optim.AdamW(model.parameters(), lr=base_lr, weight_decay=4e-2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=base_lr, weight_decay=3e-2)
 
-    epochs = 120                      # you can keep this large
-    schedule_epochs = 40              # LR schedule decays over ~40 epochs
-    total_steps = schedule_epochs * len(train_loader)
-    warmup_steps = int(0.05 * total_steps)  # 5% warmup (less time at high LR)
-    scheduler = make_warmup_cosine_scheduler(
-        optimizer, warmup_steps, total_steps, min_lr_ratio=0.05
-    )
-    make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.2)
+    epochs = 80
+    total_steps = epochs * len(train_loader)
+    warmup_steps = int(0.1 * total_steps)
+    scheduler = make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.2)
 
-   
-    best_acc = -1.0
-    best_loss = float("inf")
-    best_epoch_acc = -1
-    best_epoch_loss = -1
-    patience = 5
+    best = -1.0
+    best_epoch = -1
+    patience = 10
     bad = 0
-    global_step = 0
+
     os.makedirs("checkpoints", exist_ok=True)
 
     # save hparams for submits.py (so you reconstruct exactly)
@@ -233,7 +207,7 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
             batch_y = batch_y.to(device)  # [B]
 
             # (optional) keep your token_dropout here if you use it
-            batch_x = token_dropout(batch_x, pad_id=pad_id, unk_id=unk_id, p=0.15)
+            batch_x = token_dropout(batch_x, pad_id=pad_id, unk_id=unk_id, p=0.10)
 
             B, K, L = batch_x.shape
             x_flat = batch_x.view(B * K, L)
@@ -262,41 +236,22 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
             f"[GROUPED-CE] epoch [{epoch}/{epochs}] "
             f"train_loss={train_loss:.4f} train_cat_acc={train_cat_acc:.4f} "
             f"val_loss={val_loss:.4f} val_cat_acc={val_cat_acc:.4f} "
-            f"base_lr={base_lr:.2e} current_lr={scheduler.get_last_lr()[0]:.2e}"
+            f"base_lr:={base_lr:.4f} "
+            f"current_lr={scheduler.get_last_lr()[0]:.2e} "
         )
-        
-        improved = False
-
-        # Save best-by-acc
-        if val_cat_acc > best_acc + 1e-6:
-            best_acc = val_cat_acc
-            best_epoch_acc = epoch
-            torch.save(model.state_dict(), "checkpoints/transformer_best_acc.pt")
-            improved = True
-
-        # Save best-by-loss
-        if val_loss < best_loss - 1e-4:
-            best_loss = val_loss
-            best_epoch_loss = epoch
-            torch.save(model.state_dict(), "checkpoints/transformer_best_loss.pt")
-            improved = True
-
-        # also keep a “main” path pointing to best acc
-        if improved and val_cat_acc >= best_acc - 1e-9:
-            torch.save(model.state_dict(), "checkpoints/transformer_pairwise.pt")
-
-        if improved:
+        if val_cat_acc > best + 1e-6:
+            best = val_cat_acc
+            best_epoch = epoch
             bad = 0
+            torch.save(model.state_dict(), "checkpoints/transformer_pairwise_best.pt")
+            torch.save(model.state_dict(), "checkpoints/transformer_pairwise.pt")
+            print(f"Saved BEST -> checkpoints/transformer_pairwise_best.pt (val_cat_acc={best:.4f})")
         else:
             bad += 1
             if bad >= patience:
-                print(
-                    f"Early stopping at epoch {epoch}. "
-                    f"Best acc={best_acc:.4f} (epoch {best_epoch_acc}), "
-                    f"best loss={best_loss:.4f} (epoch {best_epoch_loss})."
-                )
+                print(f"Early stopping at epoch {epoch}. Best was {best:.4f} at epoch {best_epoch}.")
                 break
-        
+
 
 
 if __name__ == "__main__":

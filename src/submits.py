@@ -9,6 +9,13 @@ def get_device():
     return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
+def load_transformer_hparams():
+    path = "checkpoints/transformer_pairwise_hparams.json"
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Missing {path}. Train transformer first so it gets saved.")
+    with open(path, "r") as f:
+        return json.load(f)
+
 def infer_expected_in_dim(ckpt_path: str) -> int:
     sd = torch.load(ckpt_path, map_location="cpu")
     for k in ("layers.0.fc.weight", "layers.0.weight"):
@@ -248,20 +255,39 @@ def _load_transformer_vocab_and_meta():
 
     return vocab, meta
 
-
 def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
+    """
+    BBPE + GROUPED evaluation for your grouped-CE transformer.
+    This matches training: X shape [N,3,L], labels are {A,B,C} -> {0,1,2},
+    pick argmax over the 3 option scores.
+    """
     if not os.path.exists(ckpt_path):
         print(f"[skip] {tag}: missing {ckpt_path}")
         return
 
+    from tokenizers import Tokenizer
     from src.models.transformer import TextTransformer
-    from src.processing import make_pairwise_rows, encode_text
 
-    vocab, meta = _load_transformer_vocab_and_meta()
-    seed    = int(meta["seed"])
-    max_len = int(meta["max_len"])
+    # Load the exact hparams used in training
+    hp = load_transformer_hparams()
+    tokenizer_path = hp.get("bbpe_tokenizer_path", "checkpoints/bbpe_tokenizer.json")
+    if not os.path.exists(tokenizer_path):
+        raise FileNotFoundError(f"Missing {tokenizer_path}. Train BBPE transformer first.")
 
-    # Recreate the SAME val split as training
+    tok = Tokenizer.from_file(tokenizer_path)
+    vocab_size = int(tok.get_vocab_size())  # should be 12000
+
+    seed = int(hp.get("seed", 40))
+    max_len = int(hp.get("grouped_max_len", 128))
+
+    pad_id = hp.get("pad_idx", None)
+    if pad_id is None:
+        pad_id = tok.token_to_id("<pad>")
+    if pad_id is None:
+        pad_id = 0
+    pad_id = int(pad_id)
+
+    # Recreate SAME split by question
     tr_rows, va_rows = train_test_split(
         train_df,
         test_size=0.2,
@@ -269,57 +295,66 @@ def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
         stratify=train_df["label"].astype(str),
     )
 
-    va_pairs = make_pairwise_rows(va_rows)
-    X_va = np.array([encode_text(t, vocab, max_len) for t in va_pairs["text"].tolist()], dtype=np.int64)
+    mapping = {"A": 0, "B": 1, "C": 2}
+    y_va = np.array([mapping[x] for x in va_rows["label"].astype(str).str.strip().values], dtype=np.int64)
 
-    va_group_ids = va_pairs["group_id"].values
-    va_opts = va_pairs["opt"].values
-    va_gold = va_rows.set_index("id")["label"].to_dict()
+    # Build grouped X_va: [N,3,L]
+    X_va = np.zeros((len(va_rows), 3, max_len), dtype=np.int64)
 
-    hp = infer_transformer_hparams(ckpt_path)
+    for i, r in enumerate(va_rows.itertuples(index=False)):
+        fs = str(getattr(r, "FalseSent"))
+        oa = str(getattr(r, "OptionA"))
+        ob = str(getattr(r, "OptionB"))
+        oc = str(getattr(r, "OptionC"))
+        texts = [f"{fs} [SEP] {oa}", f"{fs} [SEP] {ob}", f"{fs} [SEP] {oc}"]
+
+        enc = tok.encode_batch(texts)
+        for j in range(3):
+            ids = enc[j].ids[:max_len]
+            if len(ids) < max_len:
+                ids = ids + [pad_id] * (max_len - len(ids))
+            X_va[i, j] = np.array(ids, dtype=np.int64)
+
     device = get_device()
 
     model = TextTransformer(
-        vocab_size=len(vocab),
-        num_classes=1,
-        pad_idx=hp["pad_idx"],
-        model_dim=hp["model_dim"],
-        num_heads=hp["num_heads"],
-        num_layers=hp["num_layers"],
-        ff_mult=hp["ff_mult"],
-        dropout=hp["dropout"],
-        max_len=hp["max_len"],
-        pooling=hp["pooling"],
+        vocab_size=vocab_size,               # ✅ 12000
+        num_classes=1,                       # scorer per option
+        pad_idx=pad_id,
+        model_dim=int(hp["model_dim"]),
+        num_heads=int(hp["num_heads"]),
+        num_layers=int(hp["num_layers"]),
+        ff_mult=int(hp["ff_mult"]),
+        dropout=float(hp["dropout"]),
+        max_len=int(hp["max_len"]),
+        pooling=str(hp["pooling"]),
     ).to(device)
 
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model.eval()
 
-    batch_size = 256
-    scores_chunks = []
-    with torch.no_grad():
-        for start in range(0, len(X_va), batch_size):
-            end = min(start + batch_size, len(X_va))
-            xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)
-            logits = model(xb).squeeze(1)
-            scores_chunks.append(torch.sigmoid(logits).cpu().numpy())
-
-    scores = np.concatenate(scores_chunks, axis=0)
-
-    best = {}
-    for s, gid, opt in zip(scores, va_group_ids, va_opts):
-        s = float(s)
-        if gid not in best or s > best[gid][0]:
-            best[gid] = (s, opt)
-
+    # Batched eval to avoid MPS spikes
+    batch_q = 128
     correct = 0
     total = 0
-    for gid, (_, pred_opt) in best.items():
-        total += 1
-        if pred_opt == va_gold[gid]:
-            correct += 1
 
-    acc = correct / total if total > 0 else 0.0
+    with torch.no_grad():
+        for start in range(0, len(X_va), batch_q):
+            end = min(start + batch_q, len(X_va))
+            xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)  # [B,3,L]
+            yb = torch.tensor(y_va[start:end], dtype=torch.long, device=device)  # [B]
+
+            B, K, L = xb.shape
+            scores = model(xb.view(B * K, L)).squeeze(-1).view(B, K)            # [B,3]
+            pred = torch.argmax(scores, dim=1)
+
+            correct += (pred == yb).sum().item()
+            total += B
+
+            if device.type == "mps":
+                torch.mps.empty_cache()
+
+    acc = correct / max(total, 1)
     print(f"\n[{tag}] CategoryAccuracy = {acc}")
     print(f"N = {total}")
 
@@ -327,57 +362,94 @@ def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
 def _make_submission_transformer_pairwise(train_df, test_df, out_dir: str):
     ckpt_path = "checkpoints/transformer_pairwise.pt"
     if not os.path.exists(ckpt_path):
-        print(f"[skip] transformer_pairwise submit: missing {ckpt_path}")
+        ckpt_path = "checkpoints/transformer_pairwise_best.pt"
+    if not os.path.exists(ckpt_path):
+        print("[skip] transformer submit: missing checkpoint")
         return
 
+    from tokenizers import Tokenizer
     from src.models.transformer import TextTransformer
-    from src.processing import encode_text
 
-    vocab, meta = _load_transformer_vocab_and_meta()
-    max_len = int(meta["max_len"])
+    tokenizer_path = "checkpoints/bbpe_tokenizer.json"
+    if not os.path.exists(tokenizer_path):
+        raise FileNotFoundError(f"Missing {tokenizer_path}. Train BBPE transformer first.")
 
-    # Build test pair texts (same as everywhere else)
-    te_texts, te_gids, te_opts = _build_pairwise_texts(test_df)
-    X_te = np.array([encode_text(t, vocab, max_len) for t in te_texts], dtype=np.int64)
+    tok = Tokenizer.from_file(tokenizer_path)
+    vocab_size = int(tok.get_vocab_size())
 
+    # make these consistent with training
+    max_len = 128  # <-- set to what you used in training for BBPE
+    pad_id = tok.token_to_id("<pad>")
+    unk_id = tok.token_to_id("<unk>")
+    if pad_id is None:
+        pad_id = 0
+    if unk_id is None:
+        unk_id = 1
+
+    # IMPORTANT: build grouped inputs [N,3,L] (same format you trained with grouped CE)
+    ids = test_df["id"].astype(str).tolist()
+
+    X_te = np.zeros((len(test_df), 3, max_len), dtype=np.int64)
+
+    # encode each option separately: "FalseSent [SEP] OptionX"
+    for i, r in enumerate(test_df.itertuples(index=False)):
+        fs = str(getattr(r, "FalseSent"))
+        oa = str(getattr(r, "OptionA"))
+        ob = str(getattr(r, "OptionB"))
+        oc = str(getattr(r, "OptionC"))
+        texts = [f"{fs} [SEP] {oa}", f"{fs} [SEP] {ob}", f"{fs} [SEP] {oc}"]
+
+        enc = tok.encode_batch(texts)
+        for j in range(3):
+            t_ids = enc[j].ids[:max_len]
+            if len(t_ids) < max_len:
+                t_ids = t_ids + [pad_id] * (max_len - len(t_ids))
+            X_te[i, j] = np.array(t_ids, dtype=np.int64)
+
+    # model hyperparams MUST match checkpoint
     hp = infer_transformer_hparams(ckpt_path)
     device = get_device()
 
     model = TextTransformer(
-        vocab_size=len(vocab),
-        num_classes=1,
-        pad_idx=hp["pad_idx"],
+        vocab_size=vocab_size,            # ✅ 12000
+        num_classes=1,                    # scorer per option (grouped CE uses [B,3] scores)
+        pad_idx=pad_id,                   # ✅ pad id from tokenizer
         model_dim=hp["model_dim"],
         num_heads=hp["num_heads"],
         num_layers=hp["num_layers"],
         ff_mult=hp["ff_mult"],
         dropout=hp["dropout"],
-        max_len=hp["max_len"],
+        max_len=max(hp["max_len"], max_len),
         pooling=hp["pooling"],
     ).to(device)
 
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model.eval()
 
-    batch_size = 256
-    best = {}
+    # predict in batches to avoid MPS OOM
+    batch_q = 128  # questions per batch (=> 384 sequences)
+    preds = []
 
     with torch.no_grad():
-        for start in range(0, len(X_te), batch_size):
-            end = min(start + batch_size, len(X_te))
-            xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)
-            logits = model(xb).squeeze(1)
-            scores = torch.sigmoid(logits).cpu().numpy()
+        for start in range(0, len(X_te), batch_q):
+            end = min(start + batch_q, len(X_te))
+            xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)  # [B,3,L]
+            B, K, L = xb.shape
+            scores = model(xb.view(B * K, L)).view(B, K)                         # [B,3]
+            pred = torch.argmax(scores, dim=1).cpu().numpy().tolist()
+            preds.extend(pred)
 
-            for s, gid, opt in zip(scores, te_gids[start:end], te_opts[start:end]):
-                s = float(s)
-                if gid not in best or s > best[gid][0]:
-                    best[gid] = (s, opt)
+            if device.type == "mps":
+                torch.mps.empty_cache()
 
-    ids = test_df["id"].tolist()
-    answers = [best[i][1] for i in ids]
+    answers = [OPTIONS[i] for i in preds]
     out = pd.DataFrame({"id": ids, "answer": answers})
-    _save_csv(out, os.path.join(out_dir, "submission_transformer_pairwise.csv"))
+
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "submission_transformer_pairwise.csv")
+    out.to_csv(out_path, index=False)
+    print(f"Saved {out_path} ({len(out)} rows)")
+
 def print_all_validation_accuracies(train_df, test_df):
     _print_multiclass_val_accuracy(
         tag="mlp_tfidf",
@@ -401,10 +473,11 @@ def print_all_validation_accuracies(train_df, test_df):
 
     _transformer_pairwise_category_accuracy(
         tag="transformer_pairwise",
-        ckpt_path="checkpoints/transformer_pairwise.pt",
+        ckpt_path=("checkpoints/transformer_pairwise_best.pt"
+                   if os.path.exists("checkpoints/transformer_pairwise_best.pt")
+                   else "checkpoints/transformer_pairwise.pt"),
         train_df=train_df,
-    )
-
+)
 
 def _save_csv(df: pd.DataFrame, out_path: str):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -573,7 +646,7 @@ def _make_submission_textresnet_pairwise(train_df, test_df, out_dir: str, seed=4
     _save_csv(out, os.path.join(out_dir, "submission_textresnet_pairwise.csv"))
 
 
-def _make_submission_transformer_pairwise(
+def _make_submission_transformer_pairwise_UNUSED(
     train_df,
     test_df,
     out_dir: str,
@@ -582,28 +655,28 @@ def _make_submission_transformer_pairwise(
     min_freq: int = 2,
     max_vocab: int = 50000,
 ):
-    ckpt_path = "checkpoints/transformer_pairwise.pt"
+    
+    ckpt_path = "checkpoints/transformer_pairwise_best.pt"  # <- use BEST
     if not os.path.exists(ckpt_path):
-        print(f"[skip] transformer_pairwise submit: missing {ckpt_path}")
+        # fallback if you didn't rename yet
+        ckpt_path = "checkpoints/transformer_pairwise.pt"
+    if not os.path.exists(ckpt_path):
+        print(f"[skip] transformer_pairwise submit: missing checkpoint")
         return
 
-    from src.processing import preprocess_cnn, encode_text
     from src.models.transformer import TextTransformer
+    from src.processing import encode_text
 
-    X_tr, X_va, y_tr, y_va, vocab, va_group_ids, va_opts, va_gold = preprocess_cnn(
-        train_df=train_df,
-        seed=seed,
-        mode="pairwise",
-        max_len=max_len,
-        min_freq=min_freq,
-        max_vocab=max_vocab,
-    )
+    # IMPORTANT: reuse training vocab/meta (do NOT call preprocess_cnn here)
+    vocab, meta = _load_transformer_vocab_and_meta()
+    max_len = int(meta["max_len"])
 
+    # Build test pair texts and encode with SAME vocab
     te_texts, te_gids, te_opts = _build_pairwise_texts(test_df)
     X_te = np.array([encode_text(t, vocab, max_len) for t in te_texts], dtype=np.int64)
 
-    hp = infer_transformer_hparams(ckpt_path)
 
+    hp = load_transformer_hparams()
     device = get_device()
     model = TextTransformer(
         vocab_size=len(vocab),
@@ -624,42 +697,38 @@ def _make_submission_transformer_pairwise(
     batch_size = 256
     best = {}
 
-    try:
+    def _run_on_device(dev):
+        nonlocal best
+        best = {}
         with torch.no_grad():
             for start in range(0, len(X_te), batch_size):
                 end = min(start + batch_size, len(X_te))
-                xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)
+                xb = torch.tensor(X_te[start:end], dtype=torch.long, device=dev)
                 logits = model(xb).squeeze(1)
-                scores = torch.sigmoid(logits).cpu().numpy()
-
+                scores = torch.sigmoid(logits).detach().cpu().numpy()
                 for s, gid, opt in zip(scores, te_gids[start:end], te_opts[start:end]):
                     s = float(s)
                     if gid not in best or s > best[gid][0]:
                         best[gid] = (s, opt)
+
+    try:
+        _run_on_device(device)
     except RuntimeError as e:
         if "out of memory" in str(e).lower() and device.type == "mps":
             device = torch.device("cpu")
             model = model.to(device)
-            best = {}
-            with torch.no_grad():
-                for start in range(0, len(X_te), batch_size):
-                    end = min(start + batch_size, len(X_te))
-                    xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)
-                    logits = model(xb).squeeze(1)
-                    scores = torch.sigmoid(logits).cpu().numpy()
-
-                    for s, gid, opt in zip(scores, te_gids[start:end], te_opts[start:end]):
-                        s = float(s)
-                        if gid not in best or s > best[gid][0]:
-                            best[gid] = (s, opt)
+            _run_on_device(device)
         else:
             raise
 
     ids = test_df["id"].tolist()
     answers = [best[i][1] for i in ids]
     out = pd.DataFrame({"id": ids, "answer": answers})
-    _save_csv(out, os.path.join(out_dir, "submission_transformer_pairwise.csv"))
 
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "submission_transformer_pairwise.csv")
+    out.to_csv(out_path, index=False)
+    print(f"Saved {out_path} ({len(out)} rows)") 
 
 def main():
     x_train_raw = pd.read_csv("data/train_data.csv")
