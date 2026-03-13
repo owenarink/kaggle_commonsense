@@ -1,1 +1,1 @@
-{"seed": 40, "max_len": 128, "min_freq": 2, "max_vocab": 50000}
+{"seed": 40, "max_len": 128, "min_freq": 1, "max_vocab": 50000}

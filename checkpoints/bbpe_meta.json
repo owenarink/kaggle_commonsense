@@ -1,0 +1,1 @@
+{"vocab_size": 12000, "min_freq": 2, "special_tokens": ["<pad>", "<unk>", "<sep>", "<cls>", "<eos>"]}

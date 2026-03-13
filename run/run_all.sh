@@ -40,7 +40,6 @@ run_step_chatty() {
 run_step_quiet  "1/12 src.processing"                          python -m src.processing
 run_step_quiet  "2/12 src.features.tfidf"                      python -m src.features.tfidf
 
-# chatty training steps (won't glue ball onto epoch lines)
 run_step_chatty "3/12 src.train_model"                         python -m src.train_model
 run_step_chatty "4/12 src.train_model_wPairwise"               python -m src.train_model_wPairwise
 
