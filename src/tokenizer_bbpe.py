@@ -13,10 +13,12 @@ DEFAULT_META_PATH = "checkpoints/bbpe_tokenizer_meta.json"
 def train_bbpe_tokenizer_from_train_df(
     train_df: pd.DataFrame,
     out_path: str = DEFAULT_TOK_PATH,
+    meta_path: str = DEFAULT_META_PATH,
     vocab_size: int = 12000,
     min_freq: int = 2,
 ):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    os.makedirs(os.path.dirname(meta_path), exist_ok=True)
 
     # Train on PAIRS, but as plain text is fine
     texts = []
@@ -58,7 +60,7 @@ def train_bbpe_tokenizer_from_train_df(
         "sep_id": sep_id,
         "eos_id": eos_id,
     }
-    with open(DEFAULT_META_PATH, "w") as f:
+    with open(meta_path, "w") as f:
         json.dump(meta, f)
 
     print("Saved BBPE tokenizer:", out_path)
@@ -82,6 +84,7 @@ def ensure_bbpe(
         train_bbpe_tokenizer_from_train_df(
             train_df,
             out_path=tokenizer_path,
+            meta_path=meta_path,
             vocab_size=vocab_size,
             min_freq=min_freq,
         )

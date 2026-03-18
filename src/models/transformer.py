@@ -204,65 +204,6 @@ class TextTransformer(nn.Module):
         return self.transformer.get_attention_maps(x, mask=pad_mask)
 
 
-class Seq2SeqTransformerEncoder(nn.Module):
-    """
-    Encoder-only seq2seq like the UvA tutorial's reverse task:
-    predict one output token/class per input position.
-
-    Input:  x_ids [B, L] (Long)
-    Output: logits [B, L, num_classes]
-            - if num_classes == vocab_size: token prediction
-            - else: any per-token classification task
-    """
-    def __init__(
-        self,
-        vocab_size,
-        num_classes=None,
-        pad_idx=0,
-        model_dim=256,
-        num_heads=8,
-        num_layers=3,
-        ff_mult=2,
-        dropout=0.1,
-        max_len=512,
-    ):
-        super().__init__()
-        self.pad_idx = pad_idx
-        self.vocab_size = vocab_size
-        self.num_classes = int(vocab_size if num_classes is None else num_classes)
-
-        self.embedding = nn.Embedding(vocab_size, model_dim, padding_idx=pad_idx)
-        self.positional_encoding = PositionalEncoding(d_model=model_dim, max_len=max_len)
-
-        self.encoder = TransformerEncoder(
-            num_layers=num_layers,
-            input_dim=model_dim,
-            dim_feedforward=ff_mult * model_dim,
-            num_heads=num_heads,
-            dropout=dropout,
-            act_fn=nn.ReLU,
-        )
-
-        self.dropout = nn.Dropout(dropout)
-        self.out = nn.Linear(model_dim, self.num_classes)
-
-    def forward(self, x_ids):
-        pad_mask = (x_ids != self.pad_idx)  # [B, L]
-        x = self.embedding(x_ids)           # [B, L, D]
-        x = self.positional_encoding(x)
-        x = self.encoder(x, mask=pad_mask)  # [B, L, D]
-        x = self.dropout(x)
-        logits = self.out(x)               # [B, L, C]
-        return logits
-
-    @torch.no_grad()
-    def get_attention_maps(self, x_ids):
-        pad_mask = (x_ids != self.pad_idx).to(x_ids.device)
-        x = self.embedding(x_ids)
-        x = self.positional_encoding(x)
-        return self.encoder.get_attention_maps(x, mask=pad_mask)
-
-
 if __name__ == "__main__":
     B, L = 2, 8
     vocab_size = 100
@@ -273,6 +214,4 @@ if __name__ == "__main__":
     y = clf(x)
     print("TextTransformer logits:", y.shape)  # [B, 1]
 
-    s2s = Seq2SeqTransformerEncoder(vocab_size=vocab_size, num_classes=vocab_size, pad_idx=0, model_dim=64, num_heads=4, num_layers=2, max_len=128)
-    y2 = s2s(x)
-    print("Seq2SeqTransformerEncoder logits:", y2.shape)  # [B, L, vocab_size]
+

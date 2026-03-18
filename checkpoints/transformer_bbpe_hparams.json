@@ -1,0 +1,1 @@
+{"pad_idx": 0, "model_dim": 256, "num_heads": 8, "num_layers": 4, "ff_mult": 4, "dropout": 0.35, "max_len": 512, "pooling": "mean", "bbpe_tokenizer_path": "checkpoints/transformer_bbpe_tokenizer.json", "tokenizer_meta_path": "checkpoints/transformer_bbpe_tokenizer_meta.json", "bbpe_vocab_size": 12000, "bbpe_min_freq": 2, "grouped_max_len": 128, "seed": 40}

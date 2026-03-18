@@ -279,4 +279,3 @@ if __name__ == "__main__":
     y2 = s2s(x)
     print("Seq2SeqTransformerEncoder logits:", y2.shape)  # [B, L, vocab_size]
 
-    dis_att = 

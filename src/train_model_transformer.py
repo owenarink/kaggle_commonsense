@@ -11,6 +11,10 @@ from src.processing import preprocess
 
 from src.tokenizer_bbpe import ensure_bbpe, load_bbpe, encode_grouped_bbpe
 
+TOKENIZER_PATH = "checkpoints/transformer_bbpe_tokenizer.json"
+TOKENIZER_META_PATH = "checkpoints/transformer_bbpe_tokenizer_meta.json"
+HPARAMS_PATH = "checkpoints/transformer_bbpe_hparams.json"
+
 
 def get_device():
     return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -99,10 +103,8 @@ def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len
         stratify=train_df["label"].astype(str),
     )
 
-    from src.tokenizer_bbpe import ensure_bbpe, load_bbpe, DEFAULT_TOK_PATH, DEFAULT_META_PATH
-
-    ensure_bbpe(train_df, tokenizer_path=DEFAULT_TOK_PATH, meta_path=DEFAULT_META_PATH, vocab_size=vocab_size, min_freq=min_freq)
-    tok, meta = load_bbpe(DEFAULT_TOK_PATH, DEFAULT_META_PATH)
+    ensure_bbpe(train_df, tokenizer_path=TOKENIZER_PATH, meta_path=TOKENIZER_META_PATH, vocab_size=vocab_size, min_freq=min_freq)
+    tok, meta = load_bbpe(TOKENIZER_PATH, TOKENIZER_META_PATH)
     pad_id = meta["pad_id"]
     unk_id = meta["unk_id"]
 
@@ -118,7 +120,8 @@ def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len
     tok_info = {
         "pad_id": int(pad_id),
         "unk_id": int(unk_id),
-        "tokenizer_path": "checkpoints/bbpe_tokenizer.json",
+        "tokenizer_path": TOKENIZER_PATH,
+        "tokenizer_meta_path": TOKENIZER_META_PATH,
         "vocab_size": int(tok.get_vocab_size()),
         "max_len": int(max_len),
         "seed": int(seed),
@@ -164,6 +167,7 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
     pooling = "mean"
     max_len_pe = 512
 
+
     model = TextTransformer(
         vocab_size=vocab_size,
         num_classes=1,         # scorer per option => outputs [B*3,1]
@@ -177,7 +181,7 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
         pooling=pooling,
     ).to(device)
 
-    # Grouped CE over [B,3]
+    # Grouped C over [B,3]
     criterion = nn.CrossEntropyLoss(label_smoothing=0.10)
 
     base_lr = 6e-5
@@ -213,12 +217,13 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
         "max_len": int(max_len_pe),
         "pooling": str(pooling),
         "bbpe_tokenizer_path": tok_info["tokenizer_path"],
+        "tokenizer_meta_path": tok_info["tokenizer_meta_path"],
         "bbpe_vocab_size": int(tok_info["bbpe_vocab_size"]),
         "bbpe_min_freq": int(tok_info["bbpe_min_freq"]),
         "grouped_max_len": int(tok_info["max_len"]),
         "seed": int(tok_info["seed"]),
     }
-    with open("checkpoints/transformer_pairwise_hparams.json", "w") as f:
+    with open(HPARAMS_PATH, "w") as f:
         json.dump(hparams, f)
 
     for epoch in range(1, epochs + 1):

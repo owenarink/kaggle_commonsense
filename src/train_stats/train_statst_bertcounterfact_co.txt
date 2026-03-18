@@ -1,0 +1,36 @@
+------------------- Train Bert Counter Fact Cross Option MODEL ----------------
+X_tr: (6400, 3, 128) int64
+X_va: (1600, 3, 128) int64
+y_tr: (6400,) int64
+y_va: (1600,) int64
+vocab size: 12000
+[GROUPED-CE] epoch [1/120] train_loss=1.1665 train_cat_acc=0.3706 val_loss=1.0034 val_cat_acc=0.5238 base_lr=6.00e-05 current_lr=3.00e-05
+[GROUPED-CE] epoch [2/120] train_loss=1.0312 train_cat_acc=0.5141 val_loss=0.9184 val_cat_acc=0.6125 base_lr=6.00e-05 current_lr=6.00e-05
+[GROUPED-CE] epoch [3/120] train_loss=0.9405 train_cat_acc=0.5973 val_loss=0.8505 val_cat_acc=0.6550 base_lr=6.00e-05 current_lr=5.99e-05
+[GROUPED-CE] epoch [4/120] train_loss=0.8735 train_cat_acc=0.6431 val_loss=0.8474 val_cat_acc=0.6631 base_lr=6.00e-05 current_lr=5.96e-05
+[GROUPED-CE] epoch [5/120] train_loss=0.8444 train_cat_acc=0.6566 val_loss=0.8429 val_cat_acc=0.6781 base_lr=6.00e-05 current_lr=5.91e-05
+[GROUPED-CE] epoch [6/120] train_loss=0.8195 train_cat_acc=0.6811 val_loss=0.8082 val_cat_acc=0.6850 base_lr=6.00e-05 current_lr=5.85e-05
+[GROUPED-CE] epoch [7/120] train_loss=0.7997 train_cat_acc=0.6944 val_loss=0.8156 val_cat_acc=0.6963 base_lr=6.00e-05 current_lr=5.76e-05
+[GROUPED-CE] epoch [8/120] train_loss=0.7787 train_cat_acc=0.7045 val_loss=0.8064 val_cat_acc=0.6937 base_lr=6.00e-05 current_lr=5.66e-05
+[GROUPED-CE] epoch [9/120] train_loss=0.7577 train_cat_acc=0.7197 val_loss=0.7947 val_cat_acc=0.7037 base_lr=6.00e-05 current_lr=5.54e-05
+[GROUPED-CE] epoch [10/120] train_loss=0.7384 train_cat_acc=0.7395 val_loss=0.8168 val_cat_acc=0.7144 base_lr=6.00e-05 current_lr=5.40e-05
+[GROUPED-CE] epoch [11/120] train_loss=0.7733 train_cat_acc=0.7109 val_loss=1.3492 val_cat_acc=0.6837 base_lr=6.00e-05 current_lr=5.25e-05
+[GROUPED-CE] epoch [12/120] train_loss=0.7302 train_cat_acc=0.7425 val_loss=0.8147 val_cat_acc=0.6981 base_lr=6.00e-05 current_lr=5.08e-05
+[GROUPED-CE] epoch [13/120] train_loss=0.6963 train_cat_acc=0.7662 val_loss=0.8321 val_cat_acc=0.7031 base_lr=6.00e-05 current_lr=4.90e-05
+[GROUPED-CE] epoch [14/120] train_loss=0.6732 train_cat_acc=0.7828 val_loss=0.8408 val_cat_acc=0.7081 base_lr=6.00e-05 current_lr=4.71e-05
+[GROUPED-CE] epoch [15/120] train_loss=0.6620 train_cat_acc=0.7883 val_loss=0.8395 val_cat_acc=0.7163 base_lr=6.00e-05 current_lr=4.51e-05
+[GROUPED-CE] epoch [16/120] train_loss=0.6467 train_cat_acc=0.7956 val_loss=0.8119 val_cat_acc=0.7219 base_lr=6.00e-05 current_lr=4.29e-05
+[GROUPED-CE] epoch [17/120] train_loss=0.6230 train_cat_acc=0.8108 val_loss=0.8390 val_cat_acc=0.7156 base_lr=6.00e-05 current_lr=4.08e-05
+[GROUPED-CE] epoch [18/120] train_loss=0.6135 train_cat_acc=0.8175 val_loss=0.8546 val_cat_acc=0.7169 base_lr=6.00e-05 current_lr=3.85e-05
+[GROUPED-CE] epoch [19/120] train_loss=0.6115 train_cat_acc=0.8180 val_loss=0.8533 val_cat_acc=0.7231 base_lr=6.00e-05 current_lr=3.62e-05
+[GROUPED-CE] epoch [20/120] train_loss=0.5891 train_cat_acc=0.8283 val_loss=0.8341 val_cat_acc=0.7244 base_lr=6.00e-05 current_lr=3.39e-05
+[GROUPED-CE] epoch [21/120] train_loss=0.5693 train_cat_acc=0.8484 val_loss=0.8339 val_cat_acc=0.7137 base_lr=6.00e-05 current_lr=3.15e-05
+[GROUPED-CE] epoch [22/120] train_loss=0.5634 train_cat_acc=0.8483 val_loss=0.8587 val_cat_acc=0.7181 base_lr=6.00e-05 current_lr=2.91e-05
+[GROUPED-CE] epoch [23/120] train_loss=0.5598 train_cat_acc=0.8470 val_loss=0.8441 val_cat_acc=0.7131 base_lr=6.00e-05 current_lr=2.68e-05
+[GROUPED-CE] epoch [24/120] train_loss=0.5469 train_cat_acc=0.8592 val_loss=0.8609 val_cat_acc=0.7188 base_lr=6.00e-05 current_lr=2.45e-05
+[GROUPED-CE] epoch [25/120] train_loss=0.5349 train_cat_acc=0.8667 val_loss=0.8787 val_cat_acc=0.7181 base_lr=6.00e-05 current_lr=2.22e-05
+Early stopping at epoch 25. Best acc=0.7244 (epoch 20), best loss=0.7947 (epoch 9).
+model completed
+
+
+run 2 with anomaly gate block edit:

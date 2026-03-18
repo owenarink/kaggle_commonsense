@@ -16,6 +16,50 @@ def load_transformer_hparams():
     with open(path, "r") as f:
         return json.load(f)
 
+
+def load_hparams(path: str, fallback_ckpt: str = None):
+    if path and os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)
+    if fallback_ckpt is not None:
+        return infer_transformer_hparams(fallback_ckpt)
+    raise FileNotFoundError(f"Missing hparams file: {path}")
+
+
+def first_existing_file(paths):
+    return first_existing(paths)
+
+
+def first_existing(paths):
+    for path in paths:
+        if path and os.path.exists(path):
+            return path
+    return None
+
+
+def checkpoint_kind(ckpt_path: str) -> str:
+    obj = torch.load(ckpt_path, map_location="cpu")
+    sd = obj.get("model_state", obj)
+    keys = list(sd.keys())
+    if any("latent_edit." in k for k in keys):
+        return "lec"
+    if any("cross_option." in k for k in keys):
+        return "cross_option"
+    if any("counterfact." in k for k in keys):
+        return "counterfact"
+    if any(".self_attn.qkv_proj." in k for k in keys):
+        return "plain_transformer"
+    if any(".self_attn.q_proj." in k for k in keys):
+        return "deberta_like"
+    return "unknown"
+
+
+def first_existing_matching(paths, expected_kind: str):
+    for path in paths:
+        if path and os.path.exists(path) and checkpoint_kind(path) == expected_kind:
+            return path
+    return None
+
 def infer_expected_in_dim(ckpt_path: str) -> int:
     sd = torch.load(ckpt_path, map_location="cpu")
     for k in ("layers.0.fc.weight", "layers.0.weight"):
@@ -255,39 +299,36 @@ def _load_transformer_vocab_and_meta():
 
     return vocab, meta
 
-def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
-    """
-    BBPE + GROUPED evaluation for your grouped-CE transformer.
-    This matches training: X shape [N,3,L], labels are {A,B,C} -> {0,1,2},
-    pick argmax over the 3 option scores.
-    """
+def _build_grouped_bbpe_inputs(df: pd.DataFrame, hp: dict):
+    from src.tokenizer_bbpe import load_bbpe, encode_grouped_bbpe
+
+    tokenizer_path = hp.get("tokenizer_path") or hp.get("bbpe_tokenizer_path") or "checkpoints/bbpe_tokenizer.json"
+    meta_path = hp.get("tokenizer_meta_path")
+    if not meta_path and tokenizer_path.endswith("_tokenizer.json"):
+        meta_path = tokenizer_path.replace("_tokenizer.json", "_tokenizer_meta.json")
+    if not meta_path:
+        meta_path = "checkpoints/bbpe_tokenizer_meta.json"
+    tok, meta = load_bbpe(tokenizer_path, meta_path)
+    pad_id = int(hp.get("pad_idx", meta.get("pad_id", 0)))
+    max_len = int(hp.get("grouped_max_len", 128))
+    X = encode_grouped_bbpe(df, tok, max_len=max_len, pad_id=pad_id)
+    return X, meta
+
+
+def _grouped_model_scores(model, xb: torch.Tensor, grouped_forward: bool):
+    if grouped_forward:
+        return model(xb)
+    B, K, L = xb.shape
+    return model(xb.view(B * K, L)).squeeze(-1).view(B, K)
+
+
+def _grouped_bbpe_category_accuracy(tag: str, ckpt_path: str, hparams_path: str, model_builder, train_df, grouped_forward: bool):
     if not os.path.exists(ckpt_path):
         print(f"[skip] {tag}: missing {ckpt_path}")
         return
 
-    from tokenizers import Tokenizer
-    from src.models.transformer import TextTransformer
-
-    # Load the exact hparams used in training
-    hp = load_transformer_hparams()
-    tokenizer_path = hp.get("bbpe_tokenizer_path", "checkpoints/bbpe_tokenizer.json")
-    if not os.path.exists(tokenizer_path):
-        raise FileNotFoundError(f"Missing {tokenizer_path}. Train BBPE transformer first.")
-
-    tok = Tokenizer.from_file(tokenizer_path)
-    vocab_size = int(tok.get_vocab_size())  # should be 12000
-
+    hp = load_hparams(hparams_path, fallback_ckpt=ckpt_path)
     seed = int(hp.get("seed", 40))
-    max_len = int(hp.get("grouped_max_len", 128))
-
-    pad_id = hp.get("pad_idx", None)
-    if pad_id is None:
-        pad_id = tok.token_to_id("<pad>")
-    if pad_id is None:
-        pad_id = 0
-    pad_id = int(pad_id)
-
-    # Recreate SAME split by question
     tr_rows, va_rows = train_test_split(
         train_df,
         test_size=0.2,
@@ -297,43 +338,14 @@ def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
 
     mapping = {"A": 0, "B": 1, "C": 2}
     y_va = np.array([mapping[x] for x in va_rows["label"].astype(str).str.strip().values], dtype=np.int64)
-
-    # Build grouped X_va: [N,3,L]
-    X_va = np.zeros((len(va_rows), 3, max_len), dtype=np.int64)
-
-    for i, r in enumerate(va_rows.itertuples(index=False)):
-        fs = str(getattr(r, "FalseSent"))
-        oa = str(getattr(r, "OptionA"))
-        ob = str(getattr(r, "OptionB"))
-        oc = str(getattr(r, "OptionC"))
-        texts = [f"{fs} [SEP] {oa}", f"{fs} [SEP] {ob}", f"{fs} [SEP] {oc}"]
-
-        enc = tok.encode_batch(texts)
-        for j in range(3):
-            ids = enc[j].ids[:max_len]
-            if len(ids) < max_len:
-                ids = ids + [pad_id] * (max_len - len(ids))
-            X_va[i, j] = np.array(ids, dtype=np.int64)
+    X_va, meta = _build_grouped_bbpe_inputs(va_rows, hp)
 
     device = get_device()
-
-    model = TextTransformer(
-        vocab_size=vocab_size,               # ✅ 12000
-        num_classes=1,                       # scorer per option
-        pad_idx=pad_id,
-        model_dim=int(hp["model_dim"]),
-        num_heads=int(hp["num_heads"]),
-        num_layers=int(hp["num_layers"]),
-        ff_mult=int(hp["ff_mult"]),
-        dropout=float(hp["dropout"]),
-        max_len=int(hp["max_len"]),
-        pooling=str(hp["pooling"]),
-    ).to(device)
+    model = model_builder(hp, meta).to(device)
 
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model.eval()
 
-    # Batched eval to avoid MPS spikes
     batch_q = 128
     correct = 0
     total = 0
@@ -343,13 +355,11 @@ def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
             end = min(start + batch_q, len(X_va))
             xb = torch.tensor(X_va[start:end], dtype=torch.long, device=device)  # [B,3,L]
             yb = torch.tensor(y_va[start:end], dtype=torch.long, device=device)  # [B]
-
-            B, K, L = xb.shape
-            scores = model(xb.view(B * K, L)).squeeze(-1).view(B, K)            # [B,3]
+            scores = _grouped_model_scores(model, xb, grouped_forward=grouped_forward)
             pred = torch.argmax(scores, dim=1)
 
             correct += (pred == yb).sum().item()
-            total += B
+            total += xb.size(0)
 
             if device.type == "mps":
                 torch.mps.empty_cache()
@@ -357,98 +367,84 @@ def _transformer_pairwise_category_accuracy(tag: str, ckpt_path: str, train_df):
     acc = correct / max(total, 1)
     print(f"\n[{tag}] CategoryAccuracy = {acc}")
     print(f"N = {total}")
+    if tag == "transformer_bbpe" and acc < 0.40:
+        print(
+            f"[warn] {tag}: very low validation accuracy usually means the BBPE tokenizer/checkpoint pair no longer matches "
+            f"(for example, the shared tokenizer file was retrained after this checkpoint was created)."
+        )
 
 
-def _make_submission_transformer_pairwise(train_df, test_df, out_dir: str):
-    ckpt_path = "checkpoints/transformer_pairwise.pt"
+def _make_submission_grouped_bbpe(tag: str, ckpt_path: str, hparams_path: str, model_builder, test_df, out_dir: str, out_name: str, grouped_forward: bool):
     if not os.path.exists(ckpt_path):
-        ckpt_path = "checkpoints/transformer_pairwise_best.pt"
-    if not os.path.exists(ckpt_path):
-        print("[skip] transformer submit: missing checkpoint")
+        print(f"[skip] {tag} submit: missing {ckpt_path}")
         return
 
-    from tokenizers import Tokenizer
-    from src.models.transformer import TextTransformer
+    hp = load_hparams(hparams_path, fallback_ckpt=ckpt_path)
+    X_te, meta = _build_grouped_bbpe_inputs(test_df, hp)
 
-    tokenizer_path = "checkpoints/bbpe_tokenizer.json"
-    if not os.path.exists(tokenizer_path):
-        raise FileNotFoundError(f"Missing {tokenizer_path}. Train BBPE transformer first.")
-
-    tok = Tokenizer.from_file(tokenizer_path)
-    vocab_size = int(tok.get_vocab_size())
-
-    # make these consistent with training
-    max_len = 128  # <-- set to what you used in training for BBPE
-    pad_id = tok.token_to_id("<pad>")
-    unk_id = tok.token_to_id("<unk>")
-    if pad_id is None:
-        pad_id = 0
-    if unk_id is None:
-        unk_id = 1
-
-    # IMPORTANT: build grouped inputs [N,3,L] (same format you trained with grouped CE)
-    ids = test_df["id"].astype(str).tolist()
-
-    X_te = np.zeros((len(test_df), 3, max_len), dtype=np.int64)
-
-    # encode each option separately: "FalseSent [SEP] OptionX"
-    for i, r in enumerate(test_df.itertuples(index=False)):
-        fs = str(getattr(r, "FalseSent"))
-        oa = str(getattr(r, "OptionA"))
-        ob = str(getattr(r, "OptionB"))
-        oc = str(getattr(r, "OptionC"))
-        texts = [f"{fs} [SEP] {oa}", f"{fs} [SEP] {ob}", f"{fs} [SEP] {oc}"]
-
-        enc = tok.encode_batch(texts)
-        for j in range(3):
-            t_ids = enc[j].ids[:max_len]
-            if len(t_ids) < max_len:
-                t_ids = t_ids + [pad_id] * (max_len - len(t_ids))
-            X_te[i, j] = np.array(t_ids, dtype=np.int64)
-
-    # model hyperparams MUST match checkpoint
-    hp = infer_transformer_hparams(ckpt_path)
     device = get_device()
-
-    model = TextTransformer(
-        vocab_size=vocab_size,            # ✅ 12000
-        num_classes=1,                    # scorer per option (grouped CE uses [B,3] scores)
-        pad_idx=pad_id,                   # ✅ pad id from tokenizer
-        model_dim=hp["model_dim"],
-        num_heads=hp["num_heads"],
-        num_layers=hp["num_layers"],
-        ff_mult=hp["ff_mult"],
-        dropout=hp["dropout"],
-        max_len=max(hp["max_len"], max_len),
-        pooling=hp["pooling"],
-    ).to(device)
-
+    model = model_builder(hp, meta).to(device)
     model.load_state_dict(torch.load(ckpt_path, map_location=device))
     model.eval()
 
-    # predict in batches to avoid MPS OOM
-    batch_q = 128  # questions per batch (=> 384 sequences)
+    batch_q = 128
     preds = []
 
     with torch.no_grad():
         for start in range(0, len(X_te), batch_q):
             end = min(start + batch_q, len(X_te))
-            xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)  # [B,3,L]
-            B, K, L = xb.shape
-            scores = model(xb.view(B * K, L)).view(B, K)                         # [B,3]
-            pred = torch.argmax(scores, dim=1).cpu().numpy().tolist()
-            preds.extend(pred)
+            xb = torch.tensor(X_te[start:end], dtype=torch.long, device=device)
+            scores = _grouped_model_scores(model, xb, grouped_forward=grouped_forward)
+            preds.extend(torch.argmax(scores, dim=1).cpu().numpy().tolist())
 
             if device.type == "mps":
                 torch.mps.empty_cache()
 
     answers = [OPTIONS[i] for i in preds]
-    out = pd.DataFrame({"id": ids, "answer": answers})
+    out = pd.DataFrame({"id": test_df["id"].astype(str).tolist(), "answer": answers})
+    _save_csv(out, os.path.join(out_dir, out_name))
 
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "submission_transformer_pairwise.csv")
-    out.to_csv(out_path, index=False)
-    print(f"Saved {out_path} ({len(out)} rows)")
+
+def _make_submission_transformer_bbpe(train_df, test_df, out_dir: str):
+    from src.models.transformer import TextTransformer
+
+    ckpt_path = first_existing_matching([
+        "checkpoints/transformer_best_acc.pt",
+        "checkpoints/transformer_best_loss.pt",
+        "checkpoints/transformer_pairwise_best.pt",
+        "checkpoints/transformer_pairwise.pt",
+    ], "plain_transformer")
+    if ckpt_path is None:
+        print("[skip] transformer_bbpe submit: missing plain-transformer checkpoint")
+        return
+
+    def build_model(hp, meta):
+        return TextTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    _make_submission_grouped_bbpe(
+        tag="transformer_bbpe",
+        ckpt_path=ckpt_path,
+        hparams_path=first_existing_file([
+            "checkpoints/transformer_bbpe_hparams.json",
+            "checkpoints/transformer_pairwise_hparams.json",
+        ]),
+        model_builder=build_model,
+        test_df=test_df,
+        out_dir=out_dir,
+        out_name="submission_transformer_bbpe.csv",
+        grouped_forward=False,
+    )
 
 def print_all_validation_accuracies(train_df, test_df):
     _print_multiclass_val_accuracy(
@@ -471,13 +467,125 @@ def print_all_validation_accuracies(train_df, test_df):
         train_df=train_df,
     )
 
-    _transformer_pairwise_category_accuracy(
-        tag="transformer_pairwise",
-        ckpt_path=("checkpoints/transformer_pairwise_best.pt"
-                   if os.path.exists("checkpoints/transformer_pairwise_best.pt")
-                   else "checkpoints/transformer_pairwise.pt"),
-        train_df=train_df,
-)
+    from src.models.transformer import TextTransformer
+    from src.models.bert import BertTransformer
+    from src.models.bert_segment_bias import BertSegmentBiasTransformer
+    from src.models.bertcounterfact import BertCounterFactTransformer
+    from src.models.bertcounterfact_cross_option_competition import BertCounterFactCrossOpitionCompetitionTransformer
+    from src.models.bertcounter_latent_edit_competition import BertCounterFactLatentEditCompetitionTransformer
+
+    def build_transformer(hp, meta):
+        return TextTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_bert(hp, meta):
+        return BertTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_bert_segment_bias(hp, meta):
+        return BertSegmentBiasTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_counterfact(hp, meta):
+        kwargs = dict(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+        if "sep_idx" in hp:
+            kwargs["sep_idx"] = int(hp["sep_idx"])
+        return BertCounterFactTransformer(**kwargs)
+
+    def build_cross_option(hp, meta):
+        kwargs = dict(
+            vocab_size=int(meta["vocab_size"]),
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+        if "sep_idx" in hp:
+            kwargs["sep_idx"] = int(hp["sep_idx"])
+        return BertCounterFactCrossOpitionCompetitionTransformer(**kwargs)
+
+    def build_lec(hp, meta):
+        return BertCounterFactLatentEditCompetitionTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+            edit_minimality_weight=float(hp.get("edit_minimality_weight", 0.10)),
+        )
+
+    grouped_runs = [
+        ("transformer_bbpe", first_existing_matching(["checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt", "checkpoints/transformer_pairwise_best.pt", "checkpoints/transformer_pairwise.pt"], "plain_transformer"), first_existing_file(["checkpoints/transformer_bbpe_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_transformer, False),
+        ("transformer_attentiontypes", first_existing_matching(["checkpoints/transformer_attentiontypes_best_acc.pt", "checkpoints/transformer_attentiontypes.pt", "checkpoints/transformer_attentiontypes_best_loss.pt", "checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt"], "deberta_like"), first_existing_file(["checkpoints/transformer_attentiontypes_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_bert, False),
+        ("transformer_attention_segment_bias", first_existing(["checkpoints/transformer_attention_segment_bias_best_acc.pt", "checkpoints/transformer_attention_segment_bias.pt", "checkpoints/transformer_attention_segment_bias_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_segment_bias_hparams.json"]), build_bert_segment_bias, False),
+        ("transformer_bertcounterfact", first_existing(["checkpoints/transformer_bertcounterfact_best_acc.pt", "checkpoints/transformer_bertcounterfact.pt", "checkpoints/transformer_bertcounterfact_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounterfact_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_counterfact, False),
+        ("transformer_bertcounter_cross_option", first_existing(["checkpoints/transformer_bertcounter_cross_option_best_acc.pt", "checkpoints/transformer_bertcounter_cross_option.pt", "checkpoints/transformer_bertcounter_cross_option_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_cross_option_hparams.json"]), build_cross_option, True),
+        ("transformer_bertcounter_lec", first_existing(["checkpoints/transformer_bertcounter_LEC_best_acc.pt", "checkpoints/transformer_bertcounter_LEC.pt", "checkpoints/transformer_bertcounter_LEC_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_LEC_hparams.json"]), build_lec, True),
+    ]
+
+    for tag, ckpt_path, hparams_path, model_builder, grouped_forward in grouped_runs:
+        if ckpt_path is None:
+            print(f"[skip] {tag}: missing checkpoint")
+            continue
+        _grouped_bbpe_category_accuracy(
+            tag=tag,
+            ckpt_path=ckpt_path,
+            hparams_path=hparams_path,
+            model_builder=model_builder,
+            train_df=train_df,
+            grouped_forward=grouped_forward,
+        )
 
 def _save_csv(df: pd.DataFrame, out_path: str):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -746,7 +854,113 @@ def main():
     _make_submission_mlp_tfidf(train_df, test_df, out_dir)
     _make_submission_mlp_pairwise(train_df, test_df, out_dir)
     _make_submission_textresnet_pairwise(train_df, test_df, out_dir)
-    _make_submission_transformer_pairwise(train_df, test_df, out_dir)
+    _make_submission_transformer_bbpe(train_df, test_df, out_dir)
+
+    from src.models.bert import BertTransformer
+    from src.models.bert_segment_bias import BertSegmentBiasTransformer
+    from src.models.bertcounterfact import BertCounterFactTransformer
+    from src.models.bertcounterfact_cross_option_competition import BertCounterFactCrossOpitionCompetitionTransformer
+    from src.models.bertcounter_latent_edit_competition import BertCounterFactLatentEditCompetitionTransformer
+
+    def build_bert(hp, meta):
+        return BertTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_bert_segment_bias(hp, meta):
+        return BertSegmentBiasTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_counterfact(hp, meta):
+        kwargs = dict(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+        if "sep_idx" in hp:
+            kwargs["sep_idx"] = int(hp["sep_idx"])
+        return BertCounterFactTransformer(**kwargs)
+
+    def build_cross_option(hp, meta):
+        kwargs = dict(
+            vocab_size=int(meta["vocab_size"]),
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+        if "sep_idx" in hp:
+            kwargs["sep_idx"] = int(hp["sep_idx"])
+        return BertCounterFactCrossOpitionCompetitionTransformer(**kwargs)
+
+    def build_lec(hp, meta):
+        return BertCounterFactLatentEditCompetitionTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+            edit_minimality_weight=float(hp.get("edit_minimality_weight", 0.10)),
+        )
+
+    grouped_submissions = [
+        ("transformer_attentiontypes", first_existing_matching(["checkpoints/transformer_attentiontypes_best_acc.pt", "checkpoints/transformer_attentiontypes.pt", "checkpoints/transformer_attentiontypes_best_loss.pt", "checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt"], "deberta_like"), first_existing_file(["checkpoints/transformer_attentiontypes_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_bert, "submission_transformer_attentiontypes.csv", False),
+        ("transformer_attention_segment_bias", first_existing(["checkpoints/transformer_attention_segment_bias_best_acc.pt", "checkpoints/transformer_attention_segment_bias.pt", "checkpoints/transformer_attention_segment_bias_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_segment_bias_hparams.json"]), build_bert_segment_bias, "submission_transformer_attention_segment_bias.csv", False),
+        ("transformer_bertcounterfact", first_existing(["checkpoints/transformer_bertcounterfact_best_acc.pt", "checkpoints/transformer_bertcounterfact.pt", "checkpoints/transformer_bertcounterfact_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounterfact_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_counterfact, "submission_transformer_bertcounterfact.csv", False),
+        ("transformer_bertcounter_cross_option", first_existing(["checkpoints/transformer_bertcounter_cross_option_best_acc.pt", "checkpoints/transformer_bertcounter_cross_option.pt", "checkpoints/transformer_bertcounter_cross_option_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_cross_option_hparams.json"]), build_cross_option, "submission_transformer_bertcounter_cross_option.csv", True),
+        ("transformer_bertcounter_lec", first_existing(["checkpoints/transformer_bertcounter_LEC_best_acc.pt", "checkpoints/transformer_bertcounter_LEC.pt", "checkpoints/transformer_bertcounter_LEC_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_LEC_hparams.json"]), build_lec, "submission_transformer_bertcounter_lec.csv", True),
+    ]
+
+    for tag, ckpt_path, hparams_path, model_builder, out_name, grouped_forward in grouped_submissions:
+        if ckpt_path is None:
+            print(f"[skip] {tag} submit: missing checkpoint")
+            continue
+        _make_submission_grouped_bbpe(
+            tag=tag,
+            ckpt_path=ckpt_path,
+            hparams_path=hparams_path,
+            model_builder=model_builder,
+            test_df=test_df,
+            out_dir=out_dir,
+            out_name=out_name,
+            grouped_forward=grouped_forward,
+        )
 
     print_all_validation_accuracies(train_df, test_df)
 

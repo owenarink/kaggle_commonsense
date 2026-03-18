@@ -1,4 +1,3 @@
-
 from dependencies.dependencies import *
 import os, math, json
 import numpy as np
@@ -7,41 +6,62 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
-from src.models.transformer import TextTransformer
+from src.models.bert import BertTransformer
 from src.processing import preprocess
 
 from src.tokenizer_bbpe import ensure_bbpe, load_bbpe, encode_grouped_bbpe
+
+TOKENIZER_PATH = "checkpoints/transformer_attentiontypes_tokenizer.json"
+TOKENIZER_META_PATH = "checkpoints/transformer_attentiontypes_tokenizer_meta.json"
+HPARAMS_PATH = "checkpoints/transformer_attentiontypes_hparams.json"
 
 
 def get_device():
     return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 
-def make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.1):
-    def lr_lambda(step):
+def make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.05):
+    """
+    Warmup to 1.0, then cosine decay to min_lr_ratio.
+    Clamps step/progress so LR doesn't oscillate if you train past total_steps.
+    """
+    def lr_lambda(step: int):
+        step = min(step, total_steps)
         if step < warmup_steps:
             return float(step) / float(max(1, warmup_steps))
         progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        progress = min(max(progress, 0.0), 1.0)
         cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
         return min_lr_ratio + (1.0 - min_lr_ratio) * cosine
+
     return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
-
-def token_dropout(x_ids: torch.Tensor, pad_id: int, unk_id: int, p: float):
+def token_dropout(x_ids: torch.Tensor, pad_id: int, unk_id: int, p: float, protected_ids=()):
     if p <= 0:
         return x_ids
     x = x_ids.clone()
-    mask = (x != pad_id) & (torch.rand_like(x.float()) < p)
+
+    mask = (x != pad_id)
+
+    # protect special tokens (cls/sep/eos)
+    if protected_ids:
+        prot = torch.zeros_like(x, dtype=torch.bool)
+        for pid in protected_ids:
+            prot |= (x == int(pid))
+        mask &= ~prot
+
+    mask &= (torch.rand_like(x.float()) < p)
     x[mask] = unk_id
     return x
 
 @torch.no_grad()
 def grouped_val_metrics(model, X_va, y_va, device, batch_size=128):
     """
-    Returns: (val_cat_acc, val_loss)
+    Returns (val_cat_acc, val_loss).
+    Uses CE without label_smoothing for reporting/stopping signal.
     """
     model.eval()
-    val_crit = nn.CrossEntropyLoss()  # no label smoothing for metric reporting
+    ce = nn.CrossEntropyLoss(label_smoothing=0.10)
 
     ds = TensorDataset(
         torch.tensor(X_va, dtype=torch.long),
@@ -49,29 +69,29 @@ def grouped_val_metrics(model, X_va, y_va, device, batch_size=128):
     )
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 
-    total = 0
     correct = 0
-    loss_sum = 0.0
+    total = 0
+    total_loss = 0.0
 
     for xb, yb in loader:
-        xb = xb.to(device)  # [B,3,L]
-        yb = yb.to(device)  # [B]
-
+        xb = xb.to(device)   # [B,3,L]
+        yb = yb.to(device)   # [B]
         B, K, L = xb.shape
-        scores = model(xb.view(B * K, L)).view(B, K)   # [B,3]
-        loss = val_crit(scores, yb)
 
+        scores = model(xb.view(B*K, L)).view(B, K)  # [B,3]
+        loss = ce(scores, yb)
+
+        total_loss += float(loss.item()) * B
         pred = torch.argmax(scores, dim=1)
         correct += (pred == yb).sum().item()
         total += B
-        loss_sum += float(loss.item()) * B
 
         if device.type == "mps":
             torch.mps.empty_cache()
 
-    acc = correct / max(total, 1)
-    avg_loss = loss_sum / max(total, 1)
-    return acc, avg_loss
+    val_acc = correct / max(1, total)
+    val_loss = total_loss / max(1, total)
+    return val_acc, val_loss
 
 
 def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len=128, vocab_size=12000, min_freq=2):
@@ -83,9 +103,10 @@ def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len
         stratify=train_df["label"].astype(str),
     )
 
-    # make sure tokenizer exists (train it once). You can train on FULL train_df for best tokenizer coverage.
-    ensure_bbpe(train_df, tokenizer_path="checkpoints/bbpe_tokenizer.json", vocab_size=vocab_size, min_freq=min_freq)
-    tok, pad_id, unk_id = load_bbpe("checkpoints/bbpe_tokenizer.json")
+    ensure_bbpe(train_df, tokenizer_path=TOKENIZER_PATH, meta_path=TOKENIZER_META_PATH, vocab_size=vocab_size, min_freq=min_freq)
+    tok, meta = load_bbpe(TOKENIZER_PATH, TOKENIZER_META_PATH)
+    pad_id = meta["pad_id"]
+    unk_id = meta["unk_id"]
 
     # encode grouped: [N,3,L]
     X_tr = encode_grouped_bbpe(tr_rows, tok, max_len=max_len, pad_id=pad_id)
@@ -99,7 +120,8 @@ def preprocess_transformer_grouped_bbpe(train_df: pd.DataFrame, seed=40, max_len
     tok_info = {
         "pad_id": int(pad_id),
         "unk_id": int(unk_id),
-        "tokenizer_path": "checkpoints/bbpe_tokenizer.json",
+        "tokenizer_path": TOKENIZER_PATH,
+        "tokenizer_meta_path": TOKENIZER_META_PATH,
         "vocab_size": int(tok.get_vocab_size()),
         "max_len": int(max_len),
         "seed": int(seed),
@@ -124,7 +146,7 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
     unk_id = tok_info["unk_id"]
     vocab_size = tok_info["vocab_size"]
 
-    print("------------------- TRAIN GROUPED TRANSFORMER MODEL ----------------")
+    print("------------------- Train Model Transformer Attention Types (DeBerta)----------------")
     print("X_tr:", X_tr.shape, X_tr.dtype)
     print("X_va:", X_va.shape, X_va.dtype)
     print("y_tr:", y_tr.shape, y_tr.dtype)
@@ -141,11 +163,12 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
     num_heads = 8
     num_layers = 4
     ff_mult = 4
-    dropout = 0.35
-    pooling = "cls"
+    dropout = 0.30
+    pooling = "mean"
     max_len_pe = 512
 
-    model = TextTransformer(
+
+    model = BertTransformer(
         vocab_size=vocab_size,
         num_classes=1,         # scorer per option => outputs [B*3,1]
         pad_idx=pad_id,
@@ -158,22 +181,28 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
         pooling=pooling,
     ).to(device)
 
-    # Grouped CE over [B,3]
+    # Grouped C over [B,3]
     criterion = nn.CrossEntropyLoss(label_smoothing=0.10)
 
     base_lr = 6e-5
-    optimizer = torch.optim.AdamW(model.parameters(), lr=base_lr, weight_decay=3e-2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=base_lr, weight_decay=5e-2)
 
-    epochs = 80
-    total_steps = epochs * len(train_loader)
-    warmup_steps = int(0.1 * total_steps)
-    scheduler = make_warmup_cosine_scheduler(optimizer, warmup_steps, total_steps, min_lr_ratio=0.2)
+    epochs = 120                      # you can keep this large
+    schedule_epochs = 40              # LR schedule decays over ~40 epochs
+    total_steps = schedule_epochs * len(train_loader)
+    warmup_steps = int(0.05 * total_steps)  # 5% warmup (less time at high LR)
+    scheduler = make_warmup_cosine_scheduler(
+        optimizer, warmup_steps, total_steps, min_lr_ratio=0.05
+    )
 
-    best = -1.0
-    best_epoch = -1
-    patience = 10
+   
+    best_acc = -1.0
+    best_loss = float("inf")
+    best_epoch_acc = -1
+    best_epoch_loss = -1
+    patience = 5
     bad = 0
-
+    global_step = 0
     os.makedirs("checkpoints", exist_ok=True)
 
     # save hparams for submits.py (so you reconstruct exactly)
@@ -187,12 +216,13 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
         "max_len": int(max_len_pe),
         "pooling": str(pooling),
         "bbpe_tokenizer_path": tok_info["tokenizer_path"],
+        "tokenizer_meta_path": tok_info["tokenizer_meta_path"],
         "bbpe_vocab_size": int(tok_info["bbpe_vocab_size"]),
         "bbpe_min_freq": int(tok_info["bbpe_min_freq"]),
         "grouped_max_len": int(tok_info["max_len"]),
         "seed": int(tok_info["seed"]),
     }
-    with open("checkpoints/transformer_pairwise_hparams.json", "w") as f:
+    with open(HPARAMS_PATH, "w") as f:
         json.dump(hparams, f)
 
     for epoch in range(1, epochs + 1):
@@ -236,22 +266,41 @@ def train_grouped_transformer_bbpe(train_df: pd.DataFrame, seed=40, max_len=128)
             f"[GROUPED-CE] epoch [{epoch}/{epochs}] "
             f"train_loss={train_loss:.4f} train_cat_acc={train_cat_acc:.4f} "
             f"val_loss={val_loss:.4f} val_cat_acc={val_cat_acc:.4f} "
-            f"base_lr:={base_lr:.4f} "
-            f"current_lr={scheduler.get_last_lr()[0]:.2e} "
+            f"base_lr={base_lr:.2e} current_lr={scheduler.get_last_lr()[0]:.2e}"
         )
-        if val_cat_acc > best + 1e-6:
-            best = val_cat_acc
-            best_epoch = epoch
+        
+        improved = False
+
+        # Save best-by-acc
+        if val_cat_acc > best_acc + 1e-6:
+            best_acc = val_cat_acc
+            best_epoch_acc = epoch
+            torch.save(model.state_dict(), "checkpoints/transformer_attentiontypes_best_acc.pt")
+            improved = True
+
+        # Save best-by-loss
+        if val_loss < best_loss - 1e-4:
+            best_loss = val_loss
+            best_epoch_loss = epoch
+            torch.save(model.state_dict(), "checkpoints/transformer_attentiontypes_best_loss.pt")
+            improved = True
+
+        # also keep a “main” path pointing to best acc
+        if improved and val_cat_acc >= best_acc - 1e-9:
+            torch.save(model.state_dict(), "checkpoints/transformer_attentiontypes.pt")
+
+        if improved:
             bad = 0
-            torch.save(model.state_dict(), "checkpoints/transformer_pairwise_best.pt")
-            torch.save(model.state_dict(), "checkpoints/transformer_pairwise.pt")
-            print(f"Saved BEST -> checkpoints/transformer_pairwise_best.pt (val_cat_acc={best:.4f})")
         else:
             bad += 1
             if bad >= patience:
-                print(f"Early stopping at epoch {epoch}. Best was {best:.4f} at epoch {best_epoch}.")
+                print(
+                    f"Early stopping at epoch {epoch}. "
+                    f"Best acc={best_acc:.4f} (epoch {best_epoch_acc}), "
+                    f"best loss={best_loss:.4f} (epoch {best_epoch_loss})."
+                )
                 break
-
+        
 
 
 if __name__ == "__main__":
@@ -262,5 +311,5 @@ if __name__ == "__main__":
     train_df, _ = preprocess(x_train_raw, x_test_raw, y_train_raw)
 
     train_grouped_transformer_bbpe(train_df, seed=40, max_len=128)
-    print("train_model_transformer (grouped-bbpe) completed\n")
+    print("model completed\n")
     print("------------------------------------------------")

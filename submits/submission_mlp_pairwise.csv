@@ -1,7 +1,7 @@
 id,answer
 sentence_1,C
 sentence_2,B
-sentence_3,C
+sentence_3,A
 sentence_4,A
 sentence_5,B
 sentence_6,B
@@ -10,12 +10,12 @@ sentence_8,A
 sentence_9,C
 sentence_10,C
 sentence_11,C
-sentence_12,A
+sentence_12,C
 sentence_13,B
 sentence_14,B
 sentence_15,C
 sentence_16,C
-sentence_17,C
+sentence_17,B
 sentence_18,A
 sentence_19,C
 sentence_20,B
@@ -81,7 +81,7 @@ sentence_79,A
 sentence_80,C
 sentence_81,B
 sentence_82,A
-sentence_83,B
+sentence_83,A
 sentence_84,C
 sentence_85,C
 sentence_86,A
@@ -106,7 +106,7 @@ sentence_104,A
 sentence_105,B
 sentence_106,C
 sentence_107,A
-sentence_108,C
+sentence_108,A
 sentence_109,A
 sentence_110,C
 sentence_111,C
@@ -114,14 +114,14 @@ sentence_112,C
 sentence_113,A
 sentence_114,C
 sentence_115,A
-sentence_116,C
+sentence_116,A
 sentence_117,A
 sentence_118,C
 sentence_119,C
 sentence_120,A
 sentence_121,C
 sentence_122,A
-sentence_123,C
+sentence_123,A
 sentence_124,A
 sentence_125,A
 sentence_126,A
@@ -134,7 +134,7 @@ sentence_132,B
 sentence_133,A
 sentence_134,B
 sentence_135,B
-sentence_136,B
+sentence_136,C
 sentence_137,C
 sentence_138,A
 sentence_139,A
@@ -149,10 +149,10 @@ sentence_147,B
 sentence_148,B
 sentence_149,B
 sentence_150,C
-sentence_151,C
+sentence_151,A
 sentence_152,C
 sentence_153,B
-sentence_154,B
+sentence_154,C
 sentence_155,A
 sentence_156,B
 sentence_157,C
@@ -169,7 +169,7 @@ sentence_167,C
 sentence_168,B
 sentence_169,A
 sentence_170,C
-sentence_171,B
+sentence_171,A
 sentence_172,A
 sentence_173,A
 sentence_174,A
@@ -224,7 +224,7 @@ sentence_222,C
 sentence_223,C
 sentence_224,A
 sentence_225,B
-sentence_226,C
+sentence_226,A
 sentence_227,B
 sentence_228,B
 sentence_229,B
@@ -250,7 +250,7 @@ sentence_248,B
 sentence_249,A
 sentence_250,A
 sentence_251,A
-sentence_252,A
+sentence_252,B
 sentence_253,C
 sentence_254,A
 sentence_255,B
@@ -288,7 +288,7 @@ sentence_286,B
 sentence_287,A
 sentence_288,C
 sentence_289,A
-sentence_290,B
+sentence_290,A
 sentence_291,C
 sentence_292,C
 sentence_293,B
@@ -305,7 +305,7 @@ sentence_303,A
 sentence_304,C
 sentence_305,B
 sentence_306,B
-sentence_307,B
+sentence_307,C
 sentence_308,A
 sentence_309,A
 sentence_310,B
@@ -336,7 +336,7 @@ sentence_334,C
 sentence_335,C
 sentence_336,B
 sentence_337,C
-sentence_338,C
+sentence_338,B
 sentence_339,B
 sentence_340,A
 sentence_341,B
@@ -387,7 +387,7 @@ sentence_385,B
 sentence_386,C
 sentence_387,A
 sentence_388,B
-sentence_389,B
+sentence_389,A
 sentence_390,C
 sentence_391,A
 sentence_392,C
@@ -400,7 +400,7 @@ sentence_398,B
 sentence_399,A
 sentence_400,B
 sentence_401,C
-sentence_402,A
+sentence_402,B
 sentence_403,C
 sentence_404,C
 sentence_405,B
@@ -409,7 +409,7 @@ sentence_407,C
 sentence_408,B
 sentence_409,C
 sentence_410,C
-sentence_411,C
+sentence_411,B
 sentence_412,A
 sentence_413,C
 sentence_414,B
@@ -425,7 +425,7 @@ sentence_423,B
 sentence_424,C
 sentence_425,B
 sentence_426,B
-sentence_427,A
+sentence_427,C
 sentence_428,B
 sentence_429,A
 sentence_430,C
@@ -440,7 +440,7 @@ sentence_438,B
 sentence_439,B
 sentence_440,C
 sentence_441,B
-sentence_442,C
+sentence_442,A
 sentence_443,A
 sentence_444,A
 sentence_445,B
@@ -481,7 +481,7 @@ sentence_479,B
 sentence_480,C
 sentence_481,B
 sentence_482,A
-sentence_483,B
+sentence_483,C
 sentence_484,A
 sentence_485,A
 sentence_486,C
@@ -552,7 +552,7 @@ sentence_550,C
 sentence_551,B
 sentence_552,A
 sentence_553,C
-sentence_554,C
+sentence_554,B
 sentence_555,C
 sentence_556,C
 sentence_557,C
@@ -562,7 +562,7 @@ sentence_560,C
 sentence_561,C
 sentence_562,C
 sentence_563,A
-sentence_564,A
+sentence_564,C
 sentence_565,A
 sentence_566,C
 sentence_567,B
@@ -579,7 +579,7 @@ sentence_577,B
 sentence_578,B
 sentence_579,A
 sentence_580,B
-sentence_581,C
+sentence_581,A
 sentence_582,B
 sentence_583,A
 sentence_584,A
@@ -590,7 +590,7 @@ sentence_588,B
 sentence_589,A
 sentence_590,A
 sentence_591,B
-sentence_592,A
+sentence_592,C
 sentence_593,B
 sentence_594,B
 sentence_595,C
@@ -626,7 +626,7 @@ sentence_624,A
 sentence_625,A
 sentence_626,C
 sentence_627,B
-sentence_628,C
+sentence_628,A
 sentence_629,C
 sentence_630,B
 sentence_631,A
@@ -638,7 +638,7 @@ sentence_636,C
 sentence_637,A
 sentence_638,A
 sentence_639,B
-sentence_640,B
+sentence_640,C
 sentence_641,C
 sentence_642,C
 sentence_643,C
@@ -672,7 +672,7 @@ sentence_670,A
 sentence_671,C
 sentence_672,C
 sentence_673,C
-sentence_674,C
+sentence_674,B
 sentence_675,C
 sentence_676,B
 sentence_677,A
@@ -695,7 +695,7 @@ sentence_693,A
 sentence_694,A
 sentence_695,C
 sentence_696,B
-sentence_697,B
+sentence_697,A
 sentence_698,A
 sentence_699,C
 sentence_700,C
@@ -703,7 +703,7 @@ sentence_701,B
 sentence_702,A
 sentence_703,A
 sentence_704,C
-sentence_705,B
+sentence_705,C
 sentence_706,C
 sentence_707,C
 sentence_708,C
@@ -716,7 +716,7 @@ sentence_714,B
 sentence_715,B
 sentence_716,B
 sentence_717,A
-sentence_718,C
+sentence_718,B
 sentence_719,A
 sentence_720,A
 sentence_721,B
@@ -738,7 +738,7 @@ sentence_736,A
 sentence_737,C
 sentence_738,A
 sentence_739,A
-sentence_740,C
+sentence_740,A
 sentence_741,C
 sentence_742,B
 sentence_743,A
@@ -779,7 +779,7 @@ sentence_777,A
 sentence_778,A
 sentence_779,B
 sentence_780,C
-sentence_781,A
+sentence_781,B
 sentence_782,C
 sentence_783,C
 sentence_784,C
@@ -790,7 +790,7 @@ sentence_788,C
 sentence_789,A
 sentence_790,B
 sentence_791,B
-sentence_792,A
+sentence_792,C
 sentence_793,A
 sentence_794,C
 sentence_795,A
@@ -829,7 +829,7 @@ sentence_827,B
 sentence_828,B
 sentence_829,C
 sentence_830,C
-sentence_831,B
+sentence_831,A
 sentence_832,C
 sentence_833,A
 sentence_834,A
@@ -837,10 +837,10 @@ sentence_835,A
 sentence_836,B
 sentence_837,C
 sentence_838,B
-sentence_839,B
+sentence_839,C
 sentence_840,B
 sentence_841,C
-sentence_842,C
+sentence_842,A
 sentence_843,C
 sentence_844,C
 sentence_845,C
@@ -855,7 +855,7 @@ sentence_853,B
 sentence_854,C
 sentence_855,C
 sentence_856,C
-sentence_857,C
+sentence_857,B
 sentence_858,B
 sentence_859,C
 sentence_860,A
@@ -874,7 +874,7 @@ sentence_872,B
 sentence_873,C
 sentence_874,A
 sentence_875,B
-sentence_876,B
+sentence_876,A
 sentence_877,B
 sentence_878,B
 sentence_879,A
@@ -893,7 +893,7 @@ sentence_891,B
 sentence_892,B
 sentence_893,A
 sentence_894,B
-sentence_895,C
+sentence_895,A
 sentence_896,C
 sentence_897,B
 sentence_898,B
@@ -902,7 +902,7 @@ sentence_900,C
 sentence_901,C
 sentence_902,A
 sentence_903,B
-sentence_904,A
+sentence_904,B
 sentence_905,A
 sentence_906,B
 sentence_907,B
@@ -934,10 +934,10 @@ sentence_932,A
 sentence_933,C
 sentence_934,C
 sentence_935,C
-sentence_936,B
-sentence_937,C
+sentence_936,A
+sentence_937,A
 sentence_938,B
-sentence_939,C
+sentence_939,B
 sentence_940,A
 sentence_941,C
 sentence_942,A
@@ -957,7 +957,7 @@ sentence_955,A
 sentence_956,B
 sentence_957,A
 sentence_958,C
-sentence_959,A
+sentence_959,C
 sentence_960,C
 sentence_961,C
 sentence_962,B
@@ -987,7 +987,7 @@ sentence_985,C
 sentence_986,A
 sentence_987,B
 sentence_988,A
-sentence_989,C
+sentence_989,A
 sentence_990,B
 sentence_991,B
 sentence_992,A
@@ -1153,7 +1153,7 @@ sentence_1151,C
 sentence_1152,B
 sentence_1153,B
 sentence_1154,C
-sentence_1155,A
+sentence_1155,B
 sentence_1156,A
 sentence_1157,B
 sentence_1158,B
@@ -1272,7 +1272,7 @@ sentence_1270,B
 sentence_1271,A
 sentence_1272,A
 sentence_1273,C
-sentence_1274,C
+sentence_1274,B
 sentence_1275,C
 sentence_1276,A
 sentence_1277,B
@@ -1290,7 +1290,7 @@ sentence_1288,B
 sentence_1289,C
 sentence_1290,B
 sentence_1291,B
-sentence_1292,B
+sentence_1292,C
 sentence_1293,A
 sentence_1294,A
 sentence_1295,C
@@ -1313,11 +1313,11 @@ sentence_1311,C
 sentence_1312,C
 sentence_1313,A
 sentence_1314,B
-sentence_1315,A
+sentence_1315,C
 sentence_1316,C
 sentence_1317,B
 sentence_1318,C
-sentence_1319,C
+sentence_1319,A
 sentence_1320,A
 sentence_1321,B
 sentence_1322,C
@@ -1337,7 +1337,7 @@ sentence_1335,A
 sentence_1336,B
 sentence_1337,A
 sentence_1338,B
-sentence_1339,A
+sentence_1339,B
 sentence_1340,A
 sentence_1341,B
 sentence_1342,B
@@ -1458,14 +1458,14 @@ sentence_1456,C
 sentence_1457,C
 sentence_1458,B
 sentence_1459,B
-sentence_1460,C
+sentence_1460,A
 sentence_1461,B
 sentence_1462,B
 sentence_1463,C
 sentence_1464,C
 sentence_1465,B
 sentence_1466,B
-sentence_1467,C
+sentence_1467,A
 sentence_1468,B
 sentence_1469,B
 sentence_1470,B
@@ -1524,7 +1524,7 @@ sentence_1522,B
 sentence_1523,A
 sentence_1524,A
 sentence_1525,C
-sentence_1526,A
+sentence_1526,B
 sentence_1527,C
 sentence_1528,C
 sentence_1529,B
@@ -1541,7 +1541,7 @@ sentence_1539,B
 sentence_1540,C
 sentence_1541,A
 sentence_1542,C
-sentence_1543,A
+sentence_1543,B
 sentence_1544,C
 sentence_1545,B
 sentence_1546,A
@@ -1563,7 +1563,7 @@ sentence_1561,A
 sentence_1562,B
 sentence_1563,A
 sentence_1564,C
-sentence_1565,A
+sentence_1565,B
 sentence_1566,C
 sentence_1567,B
 sentence_1568,C
@@ -1590,7 +1590,7 @@ sentence_1588,C
 sentence_1589,B
 sentence_1590,A
 sentence_1591,B
-sentence_1592,C
+sentence_1592,A
 sentence_1593,C
 sentence_1594,A
 sentence_1595,A
@@ -1626,7 +1626,7 @@ sentence_1624,B
 sentence_1625,B
 sentence_1626,B
 sentence_1627,A
-sentence_1628,A
+sentence_1628,C
 sentence_1629,A
 sentence_1630,C
 sentence_1631,A
@@ -1634,7 +1634,7 @@ sentence_1632,B
 sentence_1633,A
 sentence_1634,A
 sentence_1635,A
-sentence_1636,B
+sentence_1636,C
 sentence_1637,B
 sentence_1638,C
 sentence_1639,A
@@ -1647,7 +1647,7 @@ sentence_1645,C
 sentence_1646,A
 sentence_1647,B
 sentence_1648,B
-sentence_1649,B
+sentence_1649,A
 sentence_1650,C
 sentence_1651,C
 sentence_1652,C
@@ -1659,7 +1659,7 @@ sentence_1657,A
 sentence_1658,B
 sentence_1659,C
 sentence_1660,A
-sentence_1661,C
+sentence_1661,B
 sentence_1662,B
 sentence_1663,A
 sentence_1664,B
@@ -1682,7 +1682,7 @@ sentence_1680,B
 sentence_1681,A
 sentence_1682,C
 sentence_1683,C
-sentence_1684,A
+sentence_1684,B
 sentence_1685,B
 sentence_1686,A
 sentence_1687,B
@@ -1690,7 +1690,7 @@ sentence_1688,B
 sentence_1689,B
 sentence_1690,B
 sentence_1691,A
-sentence_1692,B
+sentence_1692,A
 sentence_1693,C
 sentence_1694,A
 sentence_1695,A
@@ -1718,7 +1718,7 @@ sentence_1716,A
 sentence_1717,B
 sentence_1718,C
 sentence_1719,A
-sentence_1720,A
+sentence_1720,B
 sentence_1721,C
 sentence_1722,C
 sentence_1723,B
@@ -1737,7 +1737,7 @@ sentence_1735,C
 sentence_1736,A
 sentence_1737,B
 sentence_1738,B
-sentence_1739,C
+sentence_1739,B
 sentence_1740,A
 sentence_1741,C
 sentence_1742,C
@@ -1812,7 +1812,7 @@ sentence_1810,A
 sentence_1811,B
 sentence_1812,C
 sentence_1813,B
-sentence_1814,A
+sentence_1814,C
 sentence_1815,C
 sentence_1816,B
 sentence_1817,A
@@ -1831,7 +1831,7 @@ sentence_1829,C
 sentence_1830,B
 sentence_1831,C
 sentence_1832,A
-sentence_1833,B
+sentence_1833,C
 sentence_1834,B
 sentence_1835,B
 sentence_1836,A
@@ -1846,7 +1846,7 @@ sentence_1844,A
 sentence_1845,B
 sentence_1846,A
 sentence_1847,C
-sentence_1848,A
+sentence_1848,B
 sentence_1849,B
 sentence_1850,C
 sentence_1851,B
@@ -1883,7 +1883,7 @@ sentence_1881,A
 sentence_1882,C
 sentence_1883,C
 sentence_1884,A
-sentence_1885,A
+sentence_1885,C
 sentence_1886,C
 sentence_1887,B
 sentence_1888,C
@@ -1896,8 +1896,8 @@ sentence_1894,C
 sentence_1895,A
 sentence_1896,A
 sentence_1897,C
-sentence_1898,A
-sentence_1899,A
+sentence_1898,C
+sentence_1899,C
 sentence_1900,C
 sentence_1901,A
 sentence_1902,A
@@ -1922,7 +1922,7 @@ sentence_1920,A
 sentence_1921,B
 sentence_1922,A
 sentence_1923,B
-sentence_1924,C
+sentence_1924,B
 sentence_1925,A
 sentence_1926,C
 sentence_1927,B
@@ -1935,7 +1935,7 @@ sentence_1933,A
 sentence_1934,C
 sentence_1935,C
 sentence_1936,B
-sentence_1937,C
+sentence_1937,B
 sentence_1938,C
 sentence_1939,B
 sentence_1940,B
@@ -1943,7 +1943,7 @@ sentence_1941,B
 sentence_1942,C
 sentence_1943,C
 sentence_1944,B
-sentence_1945,C
+sentence_1945,B
 sentence_1946,A
 sentence_1947,A
 sentence_1948,C
@@ -1995,7 +1995,7 @@ sentence_1993,B
 sentence_1994,C
 sentence_1995,C
 sentence_1996,A
-sentence_1997,C
+sentence_1997,A
 sentence_1998,A
 sentence_1999,B
 sentence_2000,C
