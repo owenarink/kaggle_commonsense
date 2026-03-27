@@ -174,6 +174,81 @@ def plot_loss_landscape_variants():
     plt.close(fig)
 
 
+def plot_relative_position_surface():
+    ckpt = np.load
+    hp = load_hparams()
+    model = build_model(hp)
+    state = __import__("torch").load(CHECKPOINTS / "transformer_attentiontypes_best_acc.pt", map_location="cpu")
+    model.load_state_dict(state, strict=False)
+
+    layer_norms = []
+    for layer_idx, layer in enumerate(model.transformer.layers):
+        emb = layer.self_attn.rel_pos_emb.weight.detach().cpu().numpy()
+        norms = np.linalg.norm(emb, axis=1)
+        layer_norms.append(norms)
+
+    z = np.stack(layer_norms, axis=0)
+    y = np.arange(z.shape[0])
+    x = np.arange(z.shape[1]) - (z.shape[1] // 2)
+    X, Y = np.meshgrid(x, y)
+
+    fig = plt.figure(figsize=(8.4, 6.2))
+    ax = fig.add_subplot(111, projection="3d")
+    surf = ax.plot_surface(X, Y, z, cmap="plasma", linewidth=0, antialiased=True, alpha=0.97)
+    ax.set_title("Relative Position Embedding Energy", fontsize=15, weight="bold")
+    ax.set_xlabel("Relative offset")
+    ax.set_ylabel("Encoder layer")
+    ax.set_zlabel("Embedding norm")
+    ax.view_init(elev=30, azim=-50)
+    fig.colorbar(surf, shrink=0.62, pad=0.08)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "attentiontypes_relative_position_surface.png", dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_projection_energy_surface():
+    import torch
+
+    hp = load_hparams()
+    model = build_model(hp)
+    state = torch.load(CHECKPOINTS / "transformer_attentiontypes_best_acc.pt", map_location="cpu")
+    model.load_state_dict(state, strict=False)
+
+    component_labels = ["q", "k", "v", "pos_k", "pos_q", "out", "ff1", "ff2"]
+    z_rows = []
+    for layer in model.transformer.layers:
+        z_rows.append([
+            float(layer.self_attn.q_proj.weight.norm().item()),
+            float(layer.self_attn.k_proj.weight.norm().item()),
+            float(layer.self_attn.v_proj.weight.norm().item()),
+            float(layer.self_attn.pos_key_proj.weight.norm().item()),
+            float(layer.self_attn.pos_query_proj.weight.norm().item()),
+            float(layer.self_attn.o_proj.weight.norm().item()),
+            float(layer.ff[0].weight.norm().item()),
+            float(layer.ff[3].weight.norm().item()),
+        ])
+
+    z = np.array(z_rows, dtype=float)
+    y = np.arange(z.shape[0])
+    x = np.arange(z.shape[1])
+    X, Y = np.meshgrid(x, y)
+
+    fig = plt.figure(figsize=(8.8, 6.4))
+    ax = fig.add_subplot(111, projection="3d")
+    surf = ax.plot_surface(X, Y, z, cmap="cividis", linewidth=0, antialiased=True, alpha=0.97)
+    ax.set_title("Projection Weight Energy Across Layers", fontsize=15, weight="bold")
+    ax.set_xlabel("Projection block")
+    ax.set_ylabel("Encoder layer")
+    ax.set_zlabel("Weight norm")
+    ax.set_xticks(x)
+    ax.set_xticklabels(component_labels)
+    ax.view_init(elev=28, azim=35)
+    fig.colorbar(surf, shrink=0.62, pad=0.08)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "attentiontypes_projection_energy_surface.png", dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     hp = load_hparams()
@@ -181,6 +256,8 @@ def main():
     plot_parameter_breakdown(model)
     plot_lr_schedule()
     plot_loss_landscape_variants()
+    plot_relative_position_surface()
+    plot_projection_energy_surface()
 
 
 if __name__ == "__main__":

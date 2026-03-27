@@ -24,6 +24,70 @@ The strongest final experiment in this repo is the grouped BBPE `AttentionTypes`
 - Optimizer: AdamW with warmup + cosine decay
 - Output: one score per option, then `argmax` over `A/B/C`
 
+## BBPE, TF-IDF, And Baselines
+
+**BBPE tokenization**
+
+Byte-Pair Encoding builds subword units by repeatedly merging frequent symbol pairs:
+
+$$
+(a,b)^\star = \arg\max_{(a,b)} \mathrm{freq}(a,b)
+$$
+
+After learning merges, a text sequence is represented as subword tokens:
+
+$$
+x = [t_1, t_2, \dots, t_L]
+$$
+
+Simple example:
+
+$$
+\texttt{sunrise} \rightarrow [\texttt{sun}, \texttt{rise}]
+$$
+
+In this project, each grouped input looks like:
+
+$$
+[\texttt{<cls>}, \texttt{false sentence}, \texttt{<sep>}, \texttt{candidate option}, \texttt{<eos>}]
+$$
+
+**TF-IDF**
+
+For the MLP baseline, each document is converted into a weighted sparse vector:
+
+$$
+\mathrm{tfidf}(t,d) = \mathrm{tf}(t,d)\cdot \log \frac{N}{\mathrm{df}(t)}
+$$
+
+Short example:
+
+$$
+\texttt{``sun rises east''} \mapsto
+[\,w_{\texttt{sun}},\, w_{\texttt{rises}},\, w_{\texttt{east}}, \dots]
+$$
+
+Rare, informative terms get larger weights than common terms.
+
+**MLP baseline**
+
+The TF-IDF baseline applies stacked affine layers with ReLU:
+
+$$
+h_1 = \mathrm{ReLU}(W_1 x + b_1), \qquad
+\hat{y} = W_2 h_1 + b_2
+$$
+
+**Pairwise MLP**
+
+For pairwise scoring, each option is scored independently:
+
+$$
+s_k = f_{\mathrm{MLP}}(x_k), \qquad \hat{y} = \arg\max_k s_k
+$$
+
+where `x_k` is the TF-IDF vector for `(false sentence [SEP] option_k)`.
+
 ## Core Equations
 
 For each question, the model scores the three candidate options and predicts the highest-scoring answer:
@@ -82,6 +146,26 @@ $$
 \theta_{t+1} = \theta_t - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} - \eta \lambda \theta_t
 $$
 
+## Regular Transformer With BBPE
+
+The non-DeBERTa transformer baseline uses standard token embedding, absolute positional encoding, self-attention, and mean pooling:
+
+$$
+e_t = \mathrm{Embed}(x_t) + p_t
+$$
+
+$$
+\mathrm{Attention}(Q,K,V) = \mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
+$$
+
+$$
+h = \mathrm{MeanPool}(\mathrm{Transformer}(e_{1:L}))
+$$
+
+$$
+s_k = W h_k + b, \qquad \hat{y} = \arg\max_k s_k
+$$
+
 ## Other DeBERTa-Style Variants Tried
 
 I also tried a few lighter and heavier relative-position attention variants around the main `AttentionTypes` model.
@@ -117,6 +201,64 @@ $$
 
 This turned out to be the strongest and most stable of the DeBERTa-inspired attention variants in the repository.
 
+## Counterfactual Variants
+
+**BERT Counterfactual Repair**
+
+This model tries to localize the anomalous part of the false sentence and connect it to a repair in the candidate option:
+
+$$
+a_i = \mathrm{softmax}(w_a^\top x_i), \qquad i \in \text{false sentence}
+$$
+
+$$
+r_i = \sum_{j \in \text{option}} \alpha_{ij}^{\mathrm{repair}} x_j
+$$
+
+$$
+u_i = \sum_{j \in \text{option}} \alpha_{ij}^{\mathrm{support}} x_j
+$$
+
+$$
+z = \mathrm{Fuse}\left(\sum_i a_i x_i,\; \sum_i a_i r_i,\; \sum_i a_i u_i\right)
+$$
+
+**BERT Counterfactual Cross-Option**
+
+This variant lets the option summaries compete directly across the three candidates:
+
+$$
+o_k = \mathrm{RepairBlock}(x_k)
+$$
+
+$$
+\beta_k = \mathrm{softmax}(w_c^\top o_k)
+$$
+
+$$
+\tilde{o}_k = o_k - \sum_{m \neq k} \beta_m o_m
+$$
+
+The goal is to highlight which candidate is strongest relative to the alternatives, not just in isolation.
+
+**BERT Counterfactual Latent Edit Competition**
+
+This model infers a shared latent correction vector for the false sentence:
+
+$$
+\delta = \tanh(W_\delta h_{\mathrm{false}})
+$$
+
+$$
+\tilde{h}_{\mathrm{false}} = h_{\mathrm{false}} + \delta
+$$
+
+$$
+g_k = \langle W_q \tilde{h}_{\mathrm{false}},\, W_k h_{\mathrm{option},k}\rangle - \lambda \|\delta\|_2^2
+$$
+
+The edit vector is shared, while each option competes to explain the repaired false-side representation.
+
 ## Selected Figures
 
 **AttentionTypes model architecture**
@@ -135,6 +277,19 @@ This turned out to be the strongest and most stable of the DeBERTa-inspired atte
     <td align="center">Original loss landscape</td>
     <td align="center">Basin view around the minimum</td>
     <td align="center">Gradient-magnitude surface</td>
+  </tr>
+</table>
+
+**3D model geometry**
+
+<table>
+  <tr>
+    <td><img src="outputs/plots/readme/attentiontypes_relative_position_surface.png" alt="Relative position surface" width="100%"></td>
+    <td><img src="outputs/plots/readme/attentiontypes_projection_energy_surface.png" alt="Projection energy surface" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">Learned relative-position embedding energy across layers</td>
+    <td align="center">Projection-weight energy across attention and FFN blocks</td>
   </tr>
 </table>
 
