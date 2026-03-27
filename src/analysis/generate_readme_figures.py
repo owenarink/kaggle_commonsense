@@ -132,12 +132,55 @@ def plot_lr_schedule():
     plt.close(fig)
 
 
+def plot_loss_landscape_variants():
+    data = np.load(ROOT / "outputs" / "plots" / "loss_landscapes" / "transformer_attentiontypes_loss_landscape.npz")
+    x = data["x"]
+    y = data["y"]
+    z = data["z"].astype(float)
+
+    zmin = np.nanmin(z)
+    min_idx = np.unravel_index(np.nanargmin(z), z.shape)
+    x0, y0, z0 = x[min_idx], y[min_idx], z[min_idx]
+
+    fig = plt.figure(figsize=(8.4, 6.4))
+    ax = fig.add_subplot(111, projection="3d")
+    surf = ax.plot_surface(x, y, z, cmap="magma", linewidth=0, antialiased=True, alpha=0.96)
+    ax.contour(x, y, z, zdir="z", offset=zmin - 0.05, cmap="magma", levels=12, linewidths=1.1)
+    ax.scatter([x0], [y0], [z0], color="#7CFF6B", s=55, depthshade=False)
+    ax.set_title("AttentionTypes Loss Basin", fontsize=15, weight="bold")
+    ax.set_xlabel("Direction 1")
+    ax.set_ylabel("Direction 2")
+    ax.set_zlabel("Validation loss")
+    ax.view_init(elev=32, azim=-58)
+    fig.colorbar(surf, shrink=0.62, pad=0.08)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "attentiontypes_loss_basin.png", dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+    gy, gx = np.gradient(z)
+    sharpness = np.sqrt(gx ** 2 + gy ** 2)
+    fig = plt.figure(figsize=(8.4, 6.4))
+    ax = fig.add_subplot(111, projection="3d")
+    surf = ax.plot_surface(x, y, sharpness, cmap="viridis", linewidth=0, antialiased=True, alpha=0.96)
+    ax.contour(x, y, sharpness, zdir="z", offset=np.nanmin(sharpness) - 0.01, cmap="viridis", levels=12, linewidths=1.0)
+    ax.set_title("AttentionTypes Sharpness Surface", fontsize=15, weight="bold")
+    ax.set_xlabel("Direction 1")
+    ax.set_ylabel("Direction 2")
+    ax.set_zlabel("Gradient magnitude")
+    ax.view_init(elev=28, azim=38)
+    fig.colorbar(surf, shrink=0.62, pad=0.08)
+    fig.tight_layout()
+    fig.savefig(OUT_DIR / "attentiontypes_sharpness_surface.png", dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     hp = load_hparams()
     model = build_model(hp)
     plot_parameter_breakdown(model)
     plot_lr_schedule()
+    plot_loss_landscape_variants()
 
 
 if __name__ == "__main__":

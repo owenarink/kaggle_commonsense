@@ -13,7 +13,7 @@ This repository contains baseline models, transformer-based experiments, custom 
 
 ## Result
 
-The strongest final experiment in this repo is a grouped BBPE transformer with DeBERTa-like attention-type mechanisms, which achieved a Kaggle public score of about `0.7456`.
+The strongest final experiment in this repo is the grouped BBPE `AttentionTypes` model. It reached a best validation accuracy of `0.7456` and a final Kaggle public score of `0.7350`.
 
 ## Competition-Style Summary
 
@@ -82,23 +82,74 @@ $$
 \theta_{t+1} = \theta_t - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} - \eta \lambda \theta_t
 $$
 
+## Other DeBERTa-Style Variants Tried
+
+I also tried a few lighter and heavier relative-position attention variants around the main `AttentionTypes` model.
+
+**1. RelativeSimple**
+
+This removes the position-to-content term and keeps only content-to-content plus content-to-position:
+
+$$
+\mathrm{score}_{ij}^{\mathrm{relsimple}} = q_i^\top k_j + q_i^\top r_{ij}^{(K)}
+$$
+
+This is simpler than full disentangled attention and tests whether relative keys alone are enough.
+
+**2. SepDistance**
+
+This adds an extra term based on distance from the separator token between the false sentence and candidate answer:
+
+$$
+\mathrm{score}_{ij}^{\mathrm{sepdist}} =
+q_i^\top k_j + q_i^\top r_{ij}^{(K)} + r_{ij}^{(Q)\top} k_j + q_i^\top s_j
+$$
+
+where `s_j` is an embedding of the token's distance to the `[SEP]` boundary. The idea is to tell the model more explicitly whether a token belongs near the false sentence side or the candidate-answer side.
+
+**3. AttentionTypes**
+
+This is the full variant used for the main result:
+
+$$
+\mathrm{score}_{ij}^{\mathrm{attn-types}} = q_i^\top k_j + q_i^\top r_{ij}^{(K)} + r_{ij}^{(Q)\top} k_j
+$$
+
+This turned out to be the strongest and most stable of the DeBERTa-inspired attention variants in the repository.
+
 ## Selected Figures
 
 **AttentionTypes model architecture**
 
 ![AttentionTypes model](outputs/plots/architectures/drawio/transformer_attentiontypes_drawio_preview.png)
 
-**Loss landscape**
+**3D loss diagnostics**
 
-![Loss landscape](outputs/plots/loss_landscapes/transformer_attentiontypes_loss_landscape.png)
+<table>
+  <tr>
+    <td><img src="outputs/plots/loss_landscapes/transformer_attentiontypes_loss_landscape.png" alt="Loss landscape" width="100%"></td>
+    <td><img src="outputs/plots/readme/attentiontypes_loss_basin.png" alt="Loss basin" width="100%"></td>
+    <td><img src="outputs/plots/readme/attentiontypes_sharpness_surface.png" alt="Sharpness surface" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">Original loss landscape</td>
+    <td align="center">Basin view around the minimum</td>
+    <td align="center">Gradient-magnitude surface</td>
+  </tr>
+</table>
 
-**Parameter breakdown**
+**Optimization diagnostics**
 
-![Parameter breakdown](outputs/plots/readme/attentiontypes_parameter_breakdown.png)
-
-**AdamW learning-rate schedule**
-
-![Learning-rate schedule](outputs/plots/readme/attentiontypes_lr_schedule.png)
+<table>
+  <tr>
+    <td><img src="outputs/plots/readme/attentiontypes_parameter_breakdown.png" alt="Parameter breakdown" width="100%"></td>
+    <td><img src="outputs/plots/readme/attentiontypes_lr_schedule.png" alt="Learning-rate schedule" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">Where model capacity is allocated</td>
+    <td align="center">AdamW warmup-cosine schedule</td>
+  </tr>
+</table>
 
 ## How The Model Works
 
@@ -125,6 +176,22 @@ The main `attentiontypes` experiment uses:
 - `batch_size = 32`
 - `warmup = 5% of scheduled steps`
 - `scheduler = cosine decay`
+
+## Validation Results
+
+The table below summarizes the archived validation scores from the saved comparison figure and training logs in this repository.
+
+| Model | Validation accuracy |
+| --- | ---: |
+| MLP + TF-IDF | 0.3338 |
+| Pairwise MLP | 0.7100 |
+| Transformer BBPE | 0.7300 |
+| AttentionTypes | 0.7456 |
+| Counterfactual Repair | 0.7400 |
+| Cross-Option Attention | 0.7344 |
+| Latent Edit Competition | 0.7125 |
+
+For the final competition submission, the `AttentionTypes` model achieved a Kaggle public score of `0.7350`.
 
 ## Repository Structure
 
