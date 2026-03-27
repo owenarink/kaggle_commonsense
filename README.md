@@ -125,7 +125,7 @@ $$
 
 Like the pairwise MLP, the CNN scores each `(false sentence, option)` pair separately and selects the highest-scoring option.
 
-## Core Equations
+## Model explanation
 
 For each question, the model scores the three candidate options and predicts the highest-scoring answer:
 
