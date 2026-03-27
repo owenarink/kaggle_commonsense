@@ -2,7 +2,7 @@
 
 Course project for a Kaggle-style commonsense reasoning challenge. The task is to select the correct answer (`A`, `B`, or `C`) for a false sentence by comparing candidate options and training neural models to recover the sensible statement.
 
-This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs used for the project and poster.
+This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs. The main model explored here is a grouped BBPE transformer with DeBERTa-inspired disentangled attention.
 
 ## Highlights
 
@@ -15,9 +15,14 @@ This repository contains baseline models, transformer-based experiments, custom 
 
 The strongest final experiment in this repo is a grouped BBPE transformer with DeBERTa-like attention-type mechanisms, which achieved a Kaggle public score of about `0.7456`.
 
-## Approach
+## Competition-Style Summary
 
-The core setup converts each question into three `(false sentence, candidate answer)` pairs, tokenizes them with BBPE, and scores the options with a shared encoder. Beyond baseline MLP/CNN models, the main focus of the project is transformer-based modeling and attention mechanism variants for better commonsense reasoning.
+- Input: one false sentence with three candidate corrections
+- Representation: grouped BBPE tokenization
+- Model: shared transformer encoder with disentangled attention
+- Pooling: mean pooling over valid tokens
+- Optimizer: AdamW with warmup + cosine decay
+- Output: one score per option, then `argmax` over `A/B/C`
 
 ## Core Equations
 
@@ -27,50 +32,99 @@ $$
 \hat{y} = \arg\max_{k \in \{A,B,C\}} s_k
 $$
 
-where each option score is produced from a shared encoder:
+Each option is passed through the same encoder and linear score head:
 
 $$
 h_k = \mathrm{Encoder}(x_k), \qquad s_k = W h_k + b
 $$
 
-The training objective is standard cross-entropy over the option scores:
+The grouped training objective is cross-entropy over the three option scores:
 
 $$
 \mathcal{L}_{\mathrm{CE}} = - \log \frac{\exp(s_y)}{\sum_{k=1}^{3} \exp(s_k)}
 $$
 
-The transformer attention mechanism is based on scaled dot-product attention:
+The simplified DeBERTa-style attention in this project mixes three score terms:
 
 $$
-\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V
+\mathrm{score}_{ij} = q_i^\top k_j + q_i^\top r_{ij}^{(K)} + r_{ij}^{(Q)\top} k_j
 $$
 
-In the DeBERTa-inspired experiments, attention is extended with relative position information to better disentangle content and position signals.
+and the final attention weights are
+
+$$
+\alpha_{ij} = \mathrm{softmax}\left(\frac{\mathrm{score}_{ij}}{\sqrt{d_k \cdot 3}}\right)
+$$
+
+Relative position embeddings encode token distance rather than absolute position:
+
+$$
+r_{ij} = \mathrm{Embed}\big(\mathrm{clip}(j-i,\,-M,\,M)\big)
+$$
+
+Mean pooling averages only over non-padding tokens:
+
+$$
+h = \frac{\sum_{t=1}^{L} m_t x_t}{\sum_{t=1}^{L} m_t}
+$$
+
+where `m_t = 1` for real tokens and `0` for padding.
+
+Dropout is used as regularization during training:
+
+$$
+\tilde{h} = \frac{m \odot h}{1-p}, \qquad m \sim \mathrm{Bernoulli}(1-p)
+$$
+
+The optimizer is AdamW, which combines adaptive moments with decoupled weight decay:
+
+$$
+\theta_{t+1} = \theta_t - \eta \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} - \eta \lambda \theta_t
+$$
 
 ## Selected Figures
 
-**Model overview**
+**AttentionTypes model architecture**
 
-![Model overview](outputs/plots/poster_panels/transformer_encoder_stack_panel.png)
-
-**Preprocessing pipeline**
-
-![Preprocessing pipeline](outputs/plots/attentiontypes_dataset_preprocessing_poster.png)
-
-**Model comparison**
-
-![Model comparison](outputs/plots/poster_panels/trial_error_models_aesthetic.png)
+![AttentionTypes model](outputs/plots/architectures/drawio/transformer_attentiontypes_drawio_preview.png)
 
 **Loss landscape**
 
 ![Loss landscape](outputs/plots/loss_landscapes/transformer_attentiontypes_loss_landscape.png)
 
-## Project Focus
+**Parameter breakdown**
 
-- Build and compare neural approaches for sentence-level commonsense reasoning
-- Experiment with grouped input modeling for multiple-choice prediction
-- Explore DeBERTa-inspired attention-type variants and BBPE tokenization
-- Analyze model behavior with plots, architecture diagrams, and explainability scripts
+![Parameter breakdown](outputs/plots/readme/attentiontypes_parameter_breakdown.png)
+
+**AdamW learning-rate schedule**
+
+![Learning-rate schedule](outputs/plots/readme/attentiontypes_lr_schedule.png)
+
+## How The Model Works
+
+- The model reads each `(false sentence, option)` pair separately, but uses the same encoder for all three options.
+- DeBERTa-style attention helps the model keep apart two things: what the token means and where it is relative to another token.
+- Relative position embeddings tell the model whether another token is nearby, far away, before, or after the current token.
+- Mean pooling turns the full token sequence into one vector by averaging the valid token representations.
+- The final linear layer converts that pooled vector into one score per answer option.
+
+## Hyperparameters
+
+The main `attentiontypes` experiment uses:
+
+- `model_dim = 256`
+- `num_heads = 8`
+- `num_layers = 4`
+- `ff_mult = 4`
+- `dropout = 0.30`
+- `grouped_max_len = 128`
+- `optimizer = AdamW`
+- `learning_rate = 6e-5`
+- `weight_decay = 5e-2`
+- `label_smoothing = 0.10`
+- `batch_size = 32`
+- `warmup = 5% of scheduled steps`
+- `scheduler = cosine decay`
 
 ## Repository Structure
 
@@ -94,6 +148,12 @@ Other entry points include:
 python -m src.run_baselines
 python -m src.train_model_transformer
 python -m src.eval
+```
+
+To regenerate the README figures added in this page:
+
+```bash
+python -m src.analysis.generate_readme_figures
 ```
 
 ## Notes
