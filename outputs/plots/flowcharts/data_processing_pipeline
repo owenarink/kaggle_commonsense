@@ -1,0 +1,27 @@
+digraph data_processing_pipeline {
+	bgcolor="#FAF7F2" pad=0.35 rankdir=LR splines=spline
+	node [color="#3D405B" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#5C677D" penwidth=1.6]
+	fontcolor="#1D3557" fontname="Helvetica-Bold" fontsize=20 label="Data Processing Pipeline" labelloc=t
+	csv [label="Load CSV files" fillcolor="#F6BD60"]
+	check [label="Column validation
+id, FalseSent, OptionA/B/C" fillcolor="#9A031E"]
+	clean [label="Basic cleanup
+astype(str), strip()" fillcolor="#5C677D"]
+	merge [label="Merge answers into train
+rename answer -> label" fillcolor="#5C677D"]
+	split [label="Stratified split
+train / validation" fillcolor="#2A9D8F"]
+	pair [label="Optional pairwise expansion
+FalseSent [SEP] Option" fillcolor="#84A59D"]
+	encode [label="Encode branch
+TF-IDF, BBPE, or vocab IDs" fillcolor="#84A59D"]
+	tensors [label="Tensor datasets / dataloaders" fillcolor="#E63946"]
+	csv -> check
+	check -> clean
+	clean -> merge
+	merge -> split
+	split -> pair
+	pair -> encode
+	encode -> tensors
+}

@@ -1,0 +1,36 @@
+digraph attentiontypes_methodology {
+	bgcolor="#FAF7F2" pad=0.35 rankdir=LR splines=spline
+	node [color="#3D405B" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#5C677D" penwidth=1.6]
+	fontcolor="#1D3557" fontname="Helvetica-Bold" fontsize=20 label="Attentiontypes Methodology" labelloc=t
+	rankdir=TB
+	input [label="Grouped BBPE token IDs
+[batch, 3, seq]" fillcolor="#F6BD60"]
+	embed [label="Token embeddings" fillcolor="#6D597A"]
+	rel [label="Relative position embeddings" fillcolor="#4D908E"]
+	c2c [label="content -> content" fillcolor="#457B9D"]
+	c2p [label="content -> position" fillcolor="#457B9D"]
+	p2c [label="position -> content" fillcolor="#457B9D"]
+	merge [label="Combine attention terms
+scale / softmax / value mix" fillcolor="#457B9D"]
+	ffn [label="Feed-forward + residual + LayerNorm
+repeat x4" fillcolor="#90BE6D"]
+	pool [label="Mean pool per option" fillcolor="#F28482"]
+	head [label="Linear scorer
+1 logit per option" fillcolor="#E63946"]
+	loss [label="Grouped cross-entropy
+choose A/B/C" fillcolor="#9A031E"]
+	input -> embed
+	embed -> c2c
+	embed -> c2p
+	rel -> c2p
+	rel -> p2c
+	embed -> p2c
+	c2c -> merge
+	c2p -> merge
+	p2c -> merge
+	merge -> ffn
+	ffn -> pool
+	pool -> head
+	head -> loss
+}

@@ -1,0 +1,19 @@
+digraph transformer_attention_relsimple {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="Attention RelSimple\nSimplified disentangled attention using content-to-position terms only." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="BBPE Tokenizer\nshared grouped encoding" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Embedding\n256-d" fillcolor="#6D597A"]
+	n1 -> n2
+	n3 [label="Relative Attention x4\nc2c + c2p" fillcolor="#457B9D"]
+	n2 -> n3
+	n4 [label="FFN + Norm\nresidual block" fillcolor="#90BE6D"]
+	n3 -> n4
+	n5 [label="Mean Pool\nper option" fillcolor="#F28482"]
+	n4 -> n5
+	n6 [label="Score Head\n1 logit / option" fillcolor="#E63946"]
+	n5 -> n6
+}

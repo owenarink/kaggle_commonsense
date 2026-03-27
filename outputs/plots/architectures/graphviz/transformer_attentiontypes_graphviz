@@ -1,0 +1,42 @@
+digraph transformer_attentiontypes {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="Attention Types / DeBERTa-like\nMost important model: disentangled attention combines content-content, content-position, and position-content terms." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="BBPE Tokenizer\ntask-specific tokenizer" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Embedding\n256-d" fillcolor="#6D597A"]
+	n1 -> n2
+	n3 [label="Relative Position Embeddings\n2*max_len-1" fillcolor="#4D908E"]
+	n2 -> n3
+	n4 [label="Disentangled Attention x4\nc2c + c2p + p2c" fillcolor="#457B9D"]
+	n3 -> n4
+	n5 [label="Feed-Forward x4\n4x expansion" fillcolor="#90BE6D"]
+	n4 -> n5
+	n6 [label="LayerNorm + Residual\nper block" fillcolor="#A8DADC"]
+	n5 -> n6
+	n7 [label="Mean Pool\nper option" fillcolor="#F28482"]
+	n6 -> n7
+	n8 [label="Score Head\n1 logit / option" fillcolor="#E63946"]
+	n7 -> n8
+	n9 [label="Grouped CE\nA/B/C choice" fillcolor="#9A031E"]
+	n8 -> n9
+	subgraph cluster_transformer_attentiontypes_notes {
+		color="#BC6C25" fontname="Helvetica-Bold" label="Key Notes" style="rounded,dashed"
+		note_0 [label="Relative position enters the score directly, not only through summed positional embeddings." color="#BC6C25" fillcolor="#FEFAE0" fontsize=11]
+		note_1 [label="The same encoder scores each candidate option independently before grouped competition in the loss." color="#BC6C25" fillcolor="#FEFAE0" fontsize=11]
+		note_2 [label="This is the clearest model to highlight in methodology diagrams." color="#BC6C25" fillcolor="#FEFAE0" fontsize=11]
+	}
+	a_q [label="Token queries" fillcolor="#457B9D"]
+	a_kv [label="Token keys/values" fillcolor="#457B9D"]
+	a_rel [label="Relative position keys/queries" fillcolor="#4D908E"]
+	a_mix [label="Disentangled score fusion" fillcolor="#BC6C25"]
+	n2 -> a_q
+	n2 -> a_kv
+	n3 -> a_rel
+	a_q -> a_mix
+	a_kv -> a_mix
+	a_rel -> a_mix
+	a_mix -> n4
+}

@@ -1,30 +1,50 @@
-# Neural Networks Course Kaggle Competition: Common Sense Challenge
+# Commonsense Reasoning with Neural Networks
 
-- [ ] Process data: 
-- [ ] Create an MLP: modules.py
-- [ ] Create 
+Course project for a Kaggle-style commonsense reasoning challenge. The task is to select the correct answer (`A`, `B`, or `C`) for a false sentence by comparing candidate options and training neural models to recover the sensible statement.
 
+This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs used for the project and poster.
 
-N-gram LSTM -> maybe better alternatives?
-text classification:
-Does the sentence make sense?
+## Project Focus
 
-So either the model lives in {0. 1}
+- Build and compare neural approaches for sentence-level commonsense reasoning
+- Experiment with grouped input modeling for multiple-choice prediction
+- Explore DeBERTa-inspired attention-type variants and BBPE tokenization
+- Analyze model behavior with plots, architecture diagrams, and explainability scripts
 
+## Repository Structure
 
-Normalization:
-Tokenization, Lemmatization, Stemming
+- [`src/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/src): training, evaluation, preprocessing, models, and analysis code
+- [`data/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/data): training/test data and sample submission files
+- [`checkpoints/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/checkpoints): saved model weights and tokenizer metadata
+- [`outputs/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/outputs): generated plots and architecture visualizations
+- [`docs/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/docs): supporting notes
 
-Representation/Embedding:
-One-Hot Encoding
-Bag of Words
-TF-IDF
-N-Gram Language Modelling
-Word2Vec
-Glove Word Embedding
+## Main Result
 
-RNN:
-Stacked RNN, Deep RNN, BiDirectional RNN, Gated Recurrent unit, bidirectional associative memory, Echo state, Recursive, Neural Tuning Machine, LSTM
-BiLSTM, seq2sec, 
+The strongest final experiment in this repo is a grouped BBPE transformer with DeBERTa-like attention-type mechanisms, which achieved a Kaggle public score of about `0.7456`.
 
-, Transformers, d
+## Getting Started
+
+Clone the repository and install the Python dependencies used in the project environment. Then run one of the training scripts from `src/`, for example:
+
+```bash
+python -m src.train_model_transformer_attentiontypes
+```
+
+Other entry points include:
+
+```bash
+python -m src.run_baselines
+python -m src.train_model_transformer
+python -m src.eval
+```
+
+## Notes
+
+- Some scripts were written for local course experimentation and may assume existing checkpoints or prepared tokenizers
+- The repository includes generated outputs and trained artifacts for reproducibility and project presentation
+
+## Authors
+
+- Owen Arink
+- T. Santos Andersen

@@ -1,0 +1,21 @@
+digraph transformer_attention_sepdist {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="Attention SEP Distance\nFlexible attention augments relative attention with distance-from-SEP bias." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="BBPE Tokenizer\nshared grouped encoding" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Embedding\n256-d" fillcolor="#6D597A"]
+	n1 -> n2
+	n3 [label="SEP Distance Features\ndistance to split token" fillcolor="#4D908E"]
+	n2 -> n3
+	n4 [label="Flexible Attention x4\nc2c + c2p + p2c + sepdist" fillcolor="#457B9D"]
+	n3 -> n4
+	n5 [label="FFN + Norm\nresidual block" fillcolor="#90BE6D"]
+	n4 -> n5
+	n6 [label="Mean Pool\nper option" fillcolor="#F28482"]
+	n5 -> n6
+	n7 [label="Score Head\n1 logit / option" fillcolor="#E63946"]
+	n6 -> n7
+}

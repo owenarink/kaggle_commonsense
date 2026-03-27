@@ -1,0 +1,28 @@
+\documentclass[tikz,border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\begin{document}
+\begin{tikzpicture}[
+    layer/.style={draw=black!80, thick, fill=blue!12, minimum width=2.8cm, minimum height=1.2cm, align=center},
+    biglayer/.style={draw=black!80, thick, fill=teal!14, minimum width=3.2cm, minimum height=2.4cm, align=center},
+    arrow/.style={-latex, thick}
+]
+\node[align=center,font=\bfseries\Large] at (8,3.8) {Attention SEP Distance};
+
+\node[layer] (l0) at (0.00,0) {Grouped Token IDs\\ [batch, 3, seq]};
+\node[layer] (l1) at (3.35,0) {BBPE Tokenizer\\ shared grouped encoding};
+\node[layer] (l2) at (6.70,0) {Embedding\\ 256-d};
+\node[layer] (l3) at (10.05,0) {SEP Distance Features\\ distance to split token};
+\node[layer] (l4) at (13.40,0) {Flexible Attention x4\\ c2c + c2p + p2c + sepdist};
+\node[layer] (l5) at (16.75,0) {FFN + Norm\\ residual block};
+\node[layer] (l6) at (20.10,0) {Mean Pool\\ per option};
+\node[layer] (l7) at (23.45,0) {Score Head\\ 1 logit / option};
+\draw[arrow] (l0.east) -- (l1.west);
+\draw[arrow] (l1.east) -- (l2.west);
+\draw[arrow] (l2.east) -- (l3.west);
+\draw[arrow] (l3.east) -- (l4.west);
+\draw[arrow] (l4.east) -- (l5.west);
+\draw[arrow] (l5.east) -- (l6.west);
+\draw[arrow] (l6.east) -- (l7.west);
+\end{tikzpicture}
+\end{document}

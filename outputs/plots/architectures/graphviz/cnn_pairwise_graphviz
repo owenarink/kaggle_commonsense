@@ -1,0 +1,21 @@
+digraph cnn_pairwise {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="Text ResNet CNN Pairwise\nEmbedding plus residual 1D convolution stack for pairwise scoring." labelloc=t
+	n0 [label="Token IDs\n[batch, seq]" fillcolor="#F6BD60"]
+	n1 [label="Embedding\n128-d" fillcolor="#6D597A"]
+	n0 -> n1
+	n2 [label="Input Conv\nConv1D + BN + ReLU" fillcolor="#355070"]
+	n1 -> n2
+	n3 [label="Residual Stage 1\n2 blocks / 64 ch" fillcolor="#577590"]
+	n2 -> n3
+	n4 [label="Residual Stage 2\n2 blocks / 128 ch" fillcolor="#577590"]
+	n3 -> n4
+	n5 [label="Residual Stage 3\n2 blocks / 256 ch" fillcolor="#577590"]
+	n4 -> n5
+	n6 [label="Adaptive Max Pool\nglobal" fillcolor="#F28482"]
+	n5 -> n6
+	n7 [label="Linear Head\n1 logit" fillcolor="#E63946"]
+	n6 -> n7
+}

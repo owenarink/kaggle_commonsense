@@ -1,0 +1,29 @@
+digraph overall_methodology {
+	bgcolor="#FAF7F2" pad=0.35 rankdir=LR splines=spline
+	node [color="#3D405B" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#5C677D" penwidth=1.6]
+	fontcolor="#1D3557" fontname="Helvetica-Bold" fontsize=20 label="Overall Methodology" labelloc=t
+	data [label="Raw CSV Data
+train_data + train_answers + test_data" fillcolor="#F6BD60"]
+	prep [label="Preprocess
+strip text, merge labels,
+validate A/B/C schema" fillcolor="#5C677D"]
+	repr [label="Representation Branches
+TF-IDF / BBPE / word IDs" fillcolor="#84A59D"]
+	models [label="Model Families
+MLP, CNN, Transformer,
+Counterfactual variants" fillcolor="#457B9D"]
+	train [label="Training
+CrossEntropy or BCEWithLogits
++ validation split" fillcolor="#5C677D"]
+	eval [label="Evaluation
+category accuracy,
+confusion, loss landscape" fillcolor="#2A9D8F"]
+	submit [label="Submission / Analysis Outputs" fillcolor="#E63946"]
+	data -> prep
+	prep -> repr
+	repr -> models
+	models -> train
+	train -> eval
+	eval -> submit
+}

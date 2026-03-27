@@ -1,0 +1,28 @@
+\documentclass[tikz,border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\begin{document}
+\begin{tikzpicture}[
+    layer/.style={draw=black!80, thick, fill=blue!12, minimum width=2.8cm, minimum height=1.2cm, align=center},
+    biglayer/.style={draw=black!80, thick, fill=teal!14, minimum width=3.2cm, minimum height=2.4cm, align=center},
+    arrow/.style={-latex, thick}
+]
+\node[align=center,font=\bfseries\Large] at (8,3.8) {Text ResNet CNN Pairwise};
+
+\node[layer] (l0) at (0.00,0) {Token IDs\\ [batch, seq]};
+\node[layer] (l1) at (3.35,0) {Embedding\\ 128-d};
+\node[layer] (l2) at (6.70,0) {Input Conv\\ Conv1D + BN + ReLU};
+\node[layer] (l3) at (10.05,0) {Residual Stage 1\\ 2 blocks / 64 ch};
+\node[layer] (l4) at (13.40,0) {Residual Stage 2\\ 2 blocks / 128 ch};
+\node[layer] (l5) at (16.75,0) {Residual Stage 3\\ 2 blocks / 256 ch};
+\node[layer] (l6) at (20.10,0) {Adaptive Max Pool\\ global};
+\node[layer] (l7) at (23.45,0) {Linear Head\\ 1 logit};
+\draw[arrow] (l0.east) -- (l1.west);
+\draw[arrow] (l1.east) -- (l2.west);
+\draw[arrow] (l2.east) -- (l3.west);
+\draw[arrow] (l3.east) -- (l4.west);
+\draw[arrow] (l4.east) -- (l5.west);
+\draw[arrow] (l5.east) -- (l6.west);
+\draw[arrow] (l6.east) -- (l7.west);
+\end{tikzpicture}
+\end{document}

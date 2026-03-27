@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" fill="none">
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="60%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.80"/>
+      <stop offset="100%" stop-color="#FAF5FF" stop-opacity="0.70"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#3B0764" flood-opacity="0.14"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+    <style>
+      text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; fill: #201433; }
+      .title { font-size: 54px; font-weight: 800; letter-spacing: -0.03em; }
+      .subtitle { font-size: 24px; font-weight: 500; fill: #6D5C8A; }
+      .section { font-size: 28px; font-weight: 760; letter-spacing: -0.02em; }
+      .body { font-size: 22px; font-weight: 520; fill: #46385F; }
+      .small { font-size: 18px; font-weight: 600; fill: #7C6C9C; }
+      .metric { font-size: 18px; font-weight: 700; fill: #5B21B6; }
+      .mono { font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', monospace; font-size: 16px; font-weight: 650; fill: #F3E8FF; }
+      .chip { font-size: 18px; font-weight: 800; fill: white; }
+    </style>
+  </defs>
+
+  <g opacity="0.95">
+    <circle cx="260" cy="120" r="160" fill="#DDD6FE" fill-opacity="0.28" filter="url(#soft)"/>
+    <circle cx="1560" cy="180" r="180" fill="#C4B5FD" fill-opacity="0.22" filter="url(#soft)"/>
+    <circle cx="1480" cy="960" r="220" fill="#E9D5FF" fill-opacity="0.24" filter="url(#soft)"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="70" rx="34" ry="34" width="1660" height="980" fill="url(#panel)" stroke="#FFFFFF" stroke-opacity="0.55"/>
+  </g>
+
+  <text x="120" y="148" class="title">Model Overview</text>
+  <text x="120" y="190" class="subtitle">Dataset, architecture, results, and the main trial-and-error path</text>
+
+  <!-- top-left dataset -->
+  <rect x="120" y="250" rx="28" width="700" height="250" fill="#FFFFFF" fill-opacity="0.58" stroke="#E9D5FF"/>
+  <text x="160" y="307" class="section">Dataset</text>
+  <circle cx="168" cy="355" r="7" fill="#A855F7"/>
+  <text x="190" y="363" class="body">8,000 training questions, 2,000 hidden test questions</text>
+  <circle cx="168" cy="401" r="7" fill="#A855F7"/>
+  <text x="190" y="409" class="body">Each sample: one false sentence + three answer options</text>
+  <circle cx="168" cy="447" r="7" fill="#A855F7"/>
+  <text x="190" y="455" class="body">Label space: A / B / C</text>
+
+  <rect x="540" y="328" rx="18" width="240" height="118" fill="#2A163F" fill-opacity="0.94" stroke="#4C1D95"/>
+  <text x="565" y="365" style="font-size:18px;font-weight:750;fill:#F5F3FF;">Example structure</text>
+  <text x="565" y="398" class="mono">FalseSent</text>
+  <text x="565" y="425" class="mono">OptionA  OptionB  OptionC</text>
+
+  <!-- arrow -->
+  <path d="M860 375 C 930 340, 995 340, 1060 375" stroke="url(#accent)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M1058 375 L1032 360 L1038 387 Z" fill="#A855F7"/>
+  <text x="920" y="325" class="small">evaluated across multiple trials</text>
+
+  <!-- top-right model -->
+  <rect x="980" y="250" rx="28" width="630" height="250" fill="#FFFFFF" fill-opacity="0.58" stroke="#E9D5FF"/>
+  <text x="1020" y="307" class="section">Model</text>
+  <circle cx="1028" cy="355" r="7" fill="#A855F7"/>
+  <text x="1050" y="363" class="body">Best final model: DeBERTa-like AttentionTypes encoder</text>
+  <circle cx="1028" cy="401" r="7" fill="#A855F7"/>
+  <text x="1050" y="409" class="body">Grouped BBPE input with three option pairs per question</text>
+  <circle cx="1028" cy="447" r="7" fill="#A855F7"/>
+  <text x="1050" y="455" class="body">Disentangled attention: content↔content and content↔position</text>
+
+  <!-- middle left results -->
+  <rect x="120" y="560" rx="28" width="700" height="250" fill="#FFFFFF" fill-opacity="0.58" stroke="#E9D5FF"/>
+  <text x="160" y="617" class="section">Results</text>
+  <rect x="160" y="650" rx="20" width="300" height="110" fill="#F5F3FF" stroke="#D8B4FE"/>
+  <text x="188" y="690" class="small">Best validation accuracy</text>
+  <text x="188" y="735" style="font-size:42px;font-weight:820;fill:#6D28D9;">0.7456</text>
+
+  <rect x="490" y="650" rx="20" width="290" height="110" fill="#FDF4FF" stroke="#E9A8FF"/>
+  <text x="518" y="690" class="small">Kaggle public score</text>
+  <text x="518" y="735" style="font-size:42px;font-weight:820;fill:#7E22CE;">0.7350</text>
+
+  <text x="160" y="790" class="metric">Best model remained the original AttentionTypes baseline.</text>
+
+  <!-- middle right model viz -->
+  <rect x="980" y="560" rx="28" width="630" height="250" fill="#FFFFFF" fill-opacity="0.58" stroke="#E9D5FF"/>
+  <text x="1020" y="617" class="section">Model Visualization</text>
+  <rect x="1020" y="648" rx="22" width="550" height="128" fill="#2A163F" fill-opacity="0.95" stroke="#4C1D95"/>
+
+  <!-- faux architecture blocks -->
+  <rect x="1060" y="686" rx="14" width="120" height="52" fill="#A855F7" fill-opacity="0.24" stroke="#C084FC"/>
+  <text x="1092" y="718" style="font-size:18px;font-weight:760;fill:#F5F3FF;">Input</text>
+  <path d="M1180 712 L1235 712" stroke="#C4B5FD" stroke-width="4" stroke-linecap="round"/>
+  <rect x="1235" y="672" rx="14" width="150" height="80" fill="#A855F7" fill-opacity="0.18" stroke="#C084FC"/>
+  <text x="1265" y="707" style="font-size:18px;font-weight:760;fill:#F5F3FF;">Attention</text>
+  <text x="1270" y="730" style="font-size:16px;font-weight:650;fill:#D8B4FE;">Types</text>
+  <path d="M1385 712 L1440 712" stroke="#C4B5FD" stroke-width="4" stroke-linecap="round"/>
+  <rect x="1440" y="686" rx="14" width="90" height="52" fill="#A855F7" fill-opacity="0.24" stroke="#C084FC"/>
+  <text x="1460" y="718" style="font-size:18px;font-weight:760;fill:#F5F3FF;">MLP</text>
+  <text x="1020" y="796" class="small">Use the final architecture graphic here inside the poster layout.</text>
+
+  <!-- bottom full-width trial and error -->
+  <rect x="120" y="860" rx="28" width="1490" height="150" fill="#FFFFFF" fill-opacity="0.58" stroke="#E9D5FF"/>
+  <text x="160" y="917" class="section">Trial &amp; Error</text>
+  <circle cx="168" cy="960" r="7" fill="#A855F7"/>
+  <text x="190" y="968" class="body">Compared plain Transformer, AttentionTypes, counterfactual variants, and latent edit competition</text>
+  <circle cx="168" cy="1000" r="7" fill="#A855F7"/>
+  <text x="190" y="1008" class="body">More structural complexity did not consistently improve generalization on this dataset</text>
+</svg>

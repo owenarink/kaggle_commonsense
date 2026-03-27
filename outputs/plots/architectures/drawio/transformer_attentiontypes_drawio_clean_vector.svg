@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1659" height="520" viewBox="0 0 1659 520">
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 z" fill="#7A848D"/></marker></defs>
+<line x1="100" y1="345" x2="145" y2="346" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="275" y1="345" x2="310" y2="346" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="465" y1="345" x2="528" y2="346" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="650" y1="345" x2="657" y2="345" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="780" y1="345" x2="786" y2="345" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="944" y1="345" x2="930" y2="345" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="1068" y1="345" x2="1094" y2="346" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="1217" y1="337" x2="1268" y2="305" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="1366" y1="302" x2="1376" y2="302" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<line x1="1444" y1="302" x2="1475" y2="302" stroke="#7A848D" stroke-width="5" marker-end="url(#arrow)"/>
+<polygon points="18,303 36,285 36,387 18,405" fill="#F0B24C" stroke="#2B2D42" stroke-width="2"/><polygon points="36,285 88,285 88,387 36,387" fill="#FFC35C" stroke="#2B2D42" stroke-width="2"/><polygon points="18,303 36,285 88,285 70,303" fill="#FFD180" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="28" cy="172" r="10" fill="#F0B24C" stroke="#2B2D42" stroke-width="2"/>
+<text x="42" y="170" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="42" dy="0">Grouped BBPE</tspan></text>
+<text x="53.0" y="431" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="53.0" dy="0">[3 x 128]</tspan></text>
+<polygon points="155,320 190,285 190,400 155,435" fill="#705C7F" stroke="#2B2D42" stroke-width="2"/><polygon points="190,285 270,285 270,400 190,400" fill="#5E4E6E" stroke="#2B2D42" stroke-width="2"/><polygon points="155,320 190,285 270,285 235,320" fill="#836E94" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="145" cy="162" r="10" fill="#705C7F" stroke="#2B2D42" stroke-width="2"/>
+<text x="159" y="160" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="159" dy="0">Token Embedding</tspan><tspan x="159" dy="20.160000000000004">Layer</tspan></text>
+<text x="212.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="212.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="315,320 350,285 350,400 315,435" fill="#5C9A99" stroke="#2B2D42" stroke-width="2"/><polygon points="350,285 460,285 460,400 350,400" fill="#4E8685" stroke="#2B2D42" stroke-width="2"/><polygon points="315,320 350,285 460,285 425,320" fill="#67AAA9" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="300" cy="210" r="10" fill="#5C9A99" stroke="#2B2D42" stroke-width="2"/>
+<text x="314" y="208" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="314" dy="0">Relative Positional</tspan><tspan x="314" dy="20.160000000000004">Embedding Layer</tspan></text>
+<text x="387.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="387.5" dy="0">[128 x 128 x 256]</tspan></text>
+<polygon points="532,320 567,285 567,400 532,435" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><polygon points="567,285 647,285 647,400 567,400" fill="#46789B" stroke="#2B2D42" stroke-width="2"/><polygon points="532,320 567,285 647,285 612,320" fill="#5E97C0" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="484" cy="154" r="10" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><text x="484" y="159" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF"><tspan x="484" dy="0">1</tspan></text>
+<text x="498" y="152" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#334E68"><tspan x="498" dy="0">Content-to-Content Attention</tspan><tspan x="498" dy="22.400000000000002">Scores</tspan></text>
+<text x="589.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="589.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="661,320 696,285 696,400 661,435" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><polygon points="696,285 776,285 776,400 696,400" fill="#46789B" stroke="#2B2D42" stroke-width="2"/><polygon points="661,320 696,285 776,285 741,320" fill="#5E97C0" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="484" cy="193" r="10" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><text x="484" y="198" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF"><tspan x="484" dy="0">2</tspan></text>
+<text x="498" y="191" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#334E68"><tspan x="498" dy="0">Content-to-Position Attention</tspan><tspan x="498" dy="22.400000000000002">Scores</tspan></text>
+<text x="718.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="718.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="790,320 825,285 825,400 790,435" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><polygon points="825,285 905,285 905,400 825,400" fill="#46789B" stroke="#2B2D42" stroke-width="2"/><polygon points="790,320 825,285 905,285 870,320" fill="#5E97C0" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="484" cy="232" r="10" fill="#4F87AF" stroke="#2B2D42" stroke-width="2"/><text x="484" y="237" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF"><tspan x="484" dy="0">3</tspan></text>
+<text x="498" y="230" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#334E68"><tspan x="498" dy="0">Position-to-Content Attention</tspan><tspan x="498" dy="22.400000000000002">Scores</tspan></text>
+<text x="847.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="847.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="935,320 970,285 970,400 935,435" fill="#C6761F" stroke="#2B2D42" stroke-width="2"/><polygon points="970,285 1060,285 1060,400 970,400" fill="#AA651C" stroke="#2B2D42" stroke-width="2"/><polygon points="935,320 970,285 1060,285 1025,320" fill="#D78424" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="910" cy="206" r="10" fill="#C6761F" stroke="#2B2D42" stroke-width="2"/>
+<text x="924" y="204" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="924" dy="0">Disentangled Multi-</tspan><tspan x="924" dy="20.160000000000004">Head Self-Attention</tspan></text>
+<text x="997.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="997.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="1100,320 1135,285 1135,400 1100,435" fill="#98C763" stroke="#2B2D42" stroke-width="2"/><polygon points="1135,285 1225,285 1225,400 1135,400" fill="#80A859" stroke="#2B2D42" stroke-width="2"/><polygon points="1100,320 1135,285 1225,285 1190,320" fill="#A9D876" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="1065" cy="164" r="10" fill="#98C763" stroke="#2B2D42" stroke-width="2"/>
+<text x="1079" y="162" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="1079" dy="0">Position-wise Feed-</tspan><tspan x="1079" dy="20.160000000000004">Forward + Residual +</tspan><tspan x="1079" dy="20.160000000000004">LayerNorm</tspan></text>
+<text x="1162.5" y="461" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="1162.5" dy="0">[3 x 128 x 256]</tspan></text>
+<polygon points="1275,309 1299,285 1299,356 1275,380" fill="#F38A8A" stroke="#2B2D42" stroke-width="2"/><polygon points="1299,285 1363,285 1363,356 1299,356" fill="#D77272" stroke="#2B2D42" stroke-width="2"/><polygon points="1275,309 1299,285 1363,285 1339,309" fill="#FFA0A0" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="1248" cy="214" r="10" fill="#F38A8A" stroke="#2B2D42" stroke-width="2"/>
+<text x="1262" y="212" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="1262" dy="0">Mean Pooling</tspan><tspan x="1262" dy="20.160000000000004">Layer</tspan></text>
+<text x="1319.0" y="406" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="1319.0" dy="0">[3 x 256]</tspan></text>
+<polygon points="1380,301 1396,285 1396,331 1380,347" fill="#F03B4D" stroke="#2B2D42" stroke-width="2"/><polygon points="1396,285 1438,285 1438,331 1396,331" fill="#D83243" stroke="#2B2D42" stroke-width="2"/><polygon points="1380,301 1396,285 1438,285 1422,301" fill="#FF5566" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="1295" cy="170" r="10" fill="#F03B4D" stroke="#2B2D42" stroke-width="2"/>
+<text x="1309" y="168" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="1309" dy="0">Linear</tspan><tspan x="1309" dy="20.160000000000004">Classification</tspan><tspan x="1309" dy="20.160000000000004">Head</tspan></text>
+<text x="1409.0" y="373" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="1409.0" dy="0">[3 x 1]</tspan></text>
+<polygon points="1480,299 1494,285 1494,311 1480,325" fill="#A8001F" stroke="#2B2D42" stroke-width="2"/><polygon points="1494,285 1530,285 1530,311 1494,311" fill="#8A0019" stroke="#2B2D42" stroke-width="2"/><polygon points="1480,299 1494,285 1530,285 1516,299" fill="#B80024" stroke="#2B2D42" stroke-width="2"/>
+<circle cx="1410" cy="234" r="10" fill="#A8001F" stroke="#2B2D42" stroke-width="2"/>
+<text x="1424" y="232" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="400" fill="#334E68"><tspan x="1424" dy="0">Grouped Cross-</tspan><tspan x="1424" dy="20.160000000000004">Entropy Loss</tspan></text>
+<text x="1505.0" y="351" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#627184"><tspan x="1505.0" dy="0">[3 classes]</tspan></text>
+</svg>

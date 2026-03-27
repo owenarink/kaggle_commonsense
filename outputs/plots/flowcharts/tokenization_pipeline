@@ -1,0 +1,25 @@
+digraph tokenization_pipeline {
+	bgcolor="#FAF7F2" pad=0.35 rankdir=LR splines=spline
+	node [color="#3D405B" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#5C677D" penwidth=1.6]
+	fontcolor="#1D3557" fontname="Helvetica-Bold" fontsize=20 label="Tokenization And Encoding" labelloc=t
+	text [label="False sentence + options" fillcolor="#F6BD60"]
+	tfidf [label="TF-IDF branch
+binary unigram/bigram
+sparse vector" fillcolor="#84A59D"]
+	cnn [label="CNN branch
+simple_tokenize -> vocab -> pad IDs" fillcolor="#84A59D"]
+	bbpe [label="Transformer branch
+Byte-level BPE
+special tokens + max_len" fillcolor="#84A59D"]
+	group [label="Grouped encoding
+[batch, 3, seq_len]" fillcolor="#2A9D8F"]
+	pair [label="Pairwise encoding
+[batch, seq_len] + BCE labels" fillcolor="#2A9D8F"]
+	text -> tfidf
+	text -> cnn
+	text -> bbpe
+	cnn -> pair
+	bbpe -> group
+	tfidf -> pair
+}

@@ -1,0 +1,19 @@
+digraph transformer_bertcounterfact {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="CounterFact Transformer\nDeBERTa-like encoder plus repair attention over false-sentence and option segments." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="BBPE Tokenizer\nfalse sentence + option" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Embedding\n256-d" fillcolor="#6D597A"]
+	n1 -> n2
+	n3 [label="Disentangled Encoder x4\ncontextualization" fillcolor="#457B9D"]
+	n2 -> n3
+	n4 [label="Counterfactual Repair Module\nanomaly/support/conflict/repair" fillcolor="#BC6C25"]
+	n3 -> n4
+	n5 [label="Fuse Pooled + Repair\nproject + norm" fillcolor="#B56576"]
+	n4 -> n5
+	n6 [label="Score Head\n1 logit / option" fillcolor="#E63946"]
+	n5 -> n6
+}

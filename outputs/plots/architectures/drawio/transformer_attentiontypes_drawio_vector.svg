@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1722" height="417" viewBox="0 0 1722 417">
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L10,4 L0,8 z" fill="#2B2D42"/></marker></defs>
+<line x1="197.46" y1="231.34" x2="166.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="312.46" y1="234.00" x2="341.28" y2="251.54" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="487.46" y1="251.54" x2="576.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="722.46" y1="234.00" x2="716.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="862.46" y1="234.00" x2="856.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="1002.46" y1="234.00" x2="1016.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="1162.46" y1="234.00" x2="1196.28" y2="234.00" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="1342.46" y1="234.00" x2="1386.28" y2="226.16" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="1440.40" y1="226.16" x2="1501.28" y2="227.71" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<line x1="1548.80" y1="227.71" x2="1586.28" y2="227.71" stroke="#6C757D" stroke-width="2.0" marker-end="url(#arrow)" />
+<g transform="rotate(90.00 124.37 231.34)"><polygon points="51.28,224.15 60.43,215.00 197.46,215.00 188.31,224.15" fill="#f7c87c" stroke="#2B2D42" stroke-width="1.5"/><polygon points="188.31,224.15 197.46,215.00 197.46,238.53 188.31,247.68" fill="#c99a4e" stroke="#2B2D42" stroke-width="1.5"/><rect x="51.28" y="224.15" width="137.03" height="23.53" fill="#F6BD60" stroke="#2B2D42" stroke-width="1.5"/><polyline points="51.28,224.15 60.43,215.00 197.46,215.00 197.46,238.53 188.31,247.68 51.28,247.68 51.28,224.15" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 239.37 234.00)"><polygon points="166.28,225.64 176.92,215.00 312.46,215.00 301.82,225.64" fill="#877691" stroke="#2B2D42" stroke-width="1.5"/><polygon points="301.82,225.64 312.46,215.00 312.46,242.36 301.82,253.00" fill="#594864" stroke="#2B2D42" stroke-width="1.5"/><rect x="166.28" y="225.64" width="135.54" height="27.36" fill="#6D597A" stroke="#2B2D42" stroke-width="1.5"/><polyline points="166.28,225.64 176.92,215.00 312.46,215.00 312.46,242.36 301.82,253.00 166.28,253.00 166.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 414.37 251.54)"><polygon points="341.28,233.00 359.28,215.00 487.46,215.00 469.46,233.00" fill="#6da3a2" stroke="#2B2D42" stroke-width="1.5"/><polygon points="469.46,233.00 487.46,215.00 487.46,270.08 469.46,288.08" fill="#3f7674" stroke="#2B2D42" stroke-width="1.5"/><rect x="341.28" y="233.00" width="128.18" height="55.08" fill="#4D908E" stroke="#2B2D42" stroke-width="1.5"/><polyline points="341.28,233.00 359.28,215.00 487.46,215.00 487.46,270.08 469.46,288.08 341.28,288.08 341.28,233.00" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 649.37 234.00)"><polygon points="576.28,225.64 586.92,215.00 722.46,215.00 711.82,225.64" fill="#6692ae" stroke="#2B2D42" stroke-width="1.5"/><polygon points="711.82,225.64 722.46,215.00 722.46,242.36 711.82,253.00" fill="#386480" stroke="#2B2D42" stroke-width="1.5"/><rect x="576.28" y="225.64" width="135.54" height="27.36" fill="#457B9D" stroke="#2B2D42" stroke-width="1.5"/><polyline points="576.28,225.64 586.92,215.00 722.46,215.00 722.46,242.36 711.82,253.00 576.28,253.00 576.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 789.37 234.00)"><polygon points="716.28,225.64 726.92,215.00 862.46,215.00 851.82,225.64" fill="#6692ae" stroke="#2B2D42" stroke-width="1.5"/><polygon points="851.82,225.64 862.46,215.00 862.46,242.36 851.82,253.00" fill="#386480" stroke="#2B2D42" stroke-width="1.5"/><rect x="716.28" y="225.64" width="135.54" height="27.36" fill="#457B9D" stroke="#2B2D42" stroke-width="1.5"/><polyline points="716.28,225.64 726.92,215.00 862.46,215.00 862.46,242.36 851.82,253.00 716.28,253.00 716.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 929.37 234.00)"><polygon points="856.28,225.64 866.92,215.00 1002.46,215.00 991.82,225.64" fill="#6692ae" stroke="#2B2D42" stroke-width="1.5"/><polygon points="991.82,225.64 1002.46,215.00 1002.46,242.36 991.82,253.00" fill="#386480" stroke="#2B2D42" stroke-width="1.5"/><rect x="856.28" y="225.64" width="135.54" height="27.36" fill="#457B9D" stroke="#2B2D42" stroke-width="1.5"/><polyline points="856.28,225.64 866.92,215.00 1002.46,215.00 1002.46,242.36 991.82,253.00 856.28,253.00 856.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 1089.37 234.00)"><polygon points="1016.28,225.64 1026.92,215.00 1162.46,215.00 1151.82,225.64" fill="#c8864c" stroke="#2B2D42" stroke-width="1.5"/><polygon points="1151.82,225.64 1162.46,215.00 1162.46,242.36 1151.82,253.00" fill="#9a581e" stroke="#2B2D42" stroke-width="1.5"/><rect x="1016.28" y="225.64" width="135.54" height="27.36" fill="#BC6C25" stroke="#2B2D42" stroke-width="1.5"/><polyline points="1016.28,225.64 1026.92,215.00 1162.46,215.00 1162.46,242.36 1151.82,253.00 1016.28,253.00 1016.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 1269.37 234.00)"><polygon points="1196.28,225.64 1206.92,215.00 1342.46,215.00 1331.82,225.64" fill="#a3c987" stroke="#2B2D42" stroke-width="1.5"/><polygon points="1331.82,225.64 1342.46,215.00 1342.46,242.36 1331.82,253.00" fill="#769b59" stroke="#2B2D42" stroke-width="1.5"/><rect x="1196.28" y="225.64" width="135.54" height="27.36" fill="#90BE6D" stroke="#2B2D42" stroke-width="1.5"/><polyline points="1196.28,225.64 1206.92,215.00 1342.46,215.00 1342.46,242.36 1331.82,253.00 1196.28,253.00 1196.28,225.64" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 1413.34 226.16)"><polygon points="1386.28,223.00 1394.28,215.00 1440.40,215.00 1432.40,223.00" fill="#f49a98" stroke="#2B2D42" stroke-width="1.5"/><polygon points="1432.40,223.00 1440.40,215.00 1440.40,229.32 1432.40,237.32" fill="#c66c6a" stroke="#2B2D42" stroke-width="1.5"/><rect x="1386.28" y="223.00" width="46.12" height="14.32" fill="#F28482" stroke="#2B2D42" stroke-width="1.5"/><polyline points="1386.28,223.00 1394.28,215.00 1440.40,215.00 1440.40,229.32 1432.40,237.32 1386.28,237.32 1386.28,223.00" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 1525.04 227.71)"><polygon points="1501.28,223.00 1509.28,215.00 1548.80,215.00 1540.80,223.00" fill="#ea5c67" stroke="#2B2D42" stroke-width="1.5"/><polygon points="1540.80,223.00 1548.80,215.00 1548.80,232.42 1540.80,240.42" fill="#bc2e39" stroke="#2B2D42" stroke-width="1.5"/><rect x="1501.28" y="223.00" width="39.52" height="17.42" fill="#E63946" stroke="#2B2D42" stroke-width="1.5"/><polyline points="1501.28,223.00 1509.28,215.00 1548.80,215.00 1548.80,232.42 1540.80,240.42 1501.28,240.42 1501.28,223.00" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<g transform="rotate(90.00 1604.28 227.71)"><polygon points="1586.28,223.00 1594.28,215.00 1622.28,215.00 1614.28,223.00" fill="#ac3046" stroke="#2B2D42" stroke-width="1.5"/><polygon points="1614.28,223.00 1622.28,215.00 1622.28,232.42 1614.28,240.42" fill="#7e0218" stroke="#2B2D42" stroke-width="1.5"/><rect x="1586.28" y="223.00" width="28.00" height="17.42" fill="#9A031E" stroke="#2B2D42" stroke-width="1.5"/><polyline points="1586.28,223.00 1594.28,215.00 1622.28,215.00 1622.28,232.42 1614.28,240.42 1586.28,240.42 1586.28,223.00" fill="none" stroke="#2B2D42" stroke-width="1.5"/></g>
+<ellipse cx="28.80" cy="135.88" rx="8.00" ry="8.00" fill="#F6BD60" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="52.80" y="140.68" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="52.80" dy="0.00">Grouped BBPE</tspan>
+</text>
+<text x="75.00" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="75.00" dy="0.00">[3 x 128]</tspan>
+</text>
+<ellipse cx="146.70" cy="61.97" rx="8.00" ry="8.00" fill="#6D597A" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="170.70" y="59.57" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="170.70" dy="0.00">Token Embedding</tspan>
+<tspan x="170.70" dy="14.40">Layer</tspan>
+</text>
+<text x="225.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="225.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="310.44" cy="108.97" rx="8.00" ry="8.00" fill="#4D908E" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="334.44" y="106.57" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="334.44" dy="0.00">Relative Positional</tspan>
+<tspan x="334.44" dy="14.40">Embedding Layer</tspan>
+</text>
+<text x="417.84" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="417.84" dy="0.00">[128 x 128 x 256]</tspan>
+</text>
+<ellipse cx="525.28" cy="37.00" rx="8.00" ry="8.00" fill="#457B9D" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="525.28" y="39.55" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10.0" font-weight="700" fill="#FFFFFF">
+<tspan x="525.28" dy="0.00">1</tspan>
+</text>
+<text x="549.28" y="38.60" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="549.28" dy="0.00">Content-to-Content Attention</tspan>
+<tspan x="549.28" dy="14.40">Scores</tspan>
+</text>
+<text x="635.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="635.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="525.28" cy="87.00" rx="8.00" ry="8.00" fill="#457B9D" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="525.28" y="89.55" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10.0" font-weight="700" fill="#FFFFFF">
+<tspan x="525.28" dy="0.00">2</tspan>
+</text>
+<text x="549.28" y="88.60" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="549.28" dy="0.00">Content-to-Position Attention</tspan>
+<tspan x="549.28" dy="14.40">Scores</tspan>
+</text>
+<text x="775.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="775.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="525.28" cy="137.00" rx="8.00" ry="8.00" fill="#457B9D" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="525.28" y="139.55" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10.0" font-weight="700" fill="#FFFFFF">
+<tspan x="525.28" dy="0.00">3</tspan>
+</text>
+<text x="549.28" y="138.60" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="549.28" dy="0.00">Position-to-Content Attention</tspan>
+<tspan x="549.28" dy="14.40">Scores</tspan>
+</text>
+<text x="915.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="915.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="989.50" cy="108.97" rx="8.00" ry="8.00" fill="#BC6C25" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="1013.50" y="106.57" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1013.50" dy="0.00">Disentangled Multi-</tspan>
+<tspan x="1013.50" dy="14.40">Head Self-Attention</tspan>
+</text>
+<text x="1075.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1075.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="1158.70" cy="52.97" rx="8.00" ry="8.00" fill="#90BE6D" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="1182.70" y="43.37" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1182.70" dy="0.00">Position-wise Feed-</tspan>
+<tspan x="1182.70" dy="14.40">Forward + Residual +</tspan>
+<tspan x="1182.70" dy="14.40">LayerNorm</tspan>
+</text>
+<text x="1255.30" y="391.98" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1255.30" dy="0.00">[3 x 128 x 256]</tspan>
+</text>
+<ellipse cx="1357.66" cy="113.18" rx="8.00" ry="8.00" fill="#F28482" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="1381.66" y="110.78" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1381.66" dy="0.00">Mean Pooling</tspan>
+<tspan x="1381.66" dy="14.40">Layer</tspan>
+</text>
+<text x="1425.46" y="299.92" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1425.46" dy="0.00">[3 x 256]</tspan>
+</text>
+<ellipse cx="1442.57" cy="59.11" rx="8.00" ry="8.00" fill="#E63946" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="1466.57" y="49.51" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1466.57" dy="0.00">Linear</tspan>
+<tspan x="1466.57" dy="14.40">Classification</tspan>
+<tspan x="1466.57" dy="14.40">Head</tspan>
+</text>
+<text x="1521.16" y="293.32" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1521.16" dy="0.00">[3 x 1]</tspan>
+</text>
+<ellipse cx="1530.54" cy="141.84" rx="8.00" ry="8.00" fill="#9A031E" stroke="#2B2D42" stroke-width="1.2"/>
+<text x="1554.54" y="139.44" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1554.54" dy="0.00">Grouped Cross-</tspan>
+<tspan x="1554.54" dy="14.40">Entropy Loss</tspan>
+</text>
+<text x="1609.14" y="281.80" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12.0" font-weight="400" fill="#1F2937">
+<tspan x="1609.14" dy="0.00">[3 classes]</tspan>
+</text>
+</svg>

@@ -322,6 +322,17 @@ def _grouped_model_scores(model, xb: torch.Tensor, grouped_forward: bool):
     return model(xb.view(B * K, L)).squeeze(-1).view(B, K)
 
 
+def _safe_load_grouped_state(model, ckpt_path: str, device, tag: str) -> bool:
+    state = torch.load(ckpt_path, map_location=device)
+    try:
+        model.load_state_dict(state)
+        return True
+    except RuntimeError as e:
+        print(f"[skip] {tag}: checkpoint/model mismatch for {ckpt_path}")
+        print(f"reason: {e}")
+        return False
+
+
 def _grouped_bbpe_category_accuracy(tag: str, ckpt_path: str, hparams_path: str, model_builder, train_df, grouped_forward: bool):
     if not os.path.exists(ckpt_path):
         print(f"[skip] {tag}: missing {ckpt_path}")
@@ -342,8 +353,8 @@ def _grouped_bbpe_category_accuracy(tag: str, ckpt_path: str, hparams_path: str,
 
     device = get_device()
     model = model_builder(hp, meta).to(device)
-
-    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    if not _safe_load_grouped_state(model, ckpt_path, device, tag):
+        return
     model.eval()
 
     batch_q = 128
@@ -384,7 +395,8 @@ def _make_submission_grouped_bbpe(tag: str, ckpt_path: str, hparams_path: str, m
 
     device = get_device()
     model = model_builder(hp, meta).to(device)
-    model.load_state_dict(torch.load(ckpt_path, map_location=device))
+    if not _safe_load_grouped_state(model, ckpt_path, device, tag):
+        return
     model.eval()
 
     batch_q = 128
@@ -469,7 +481,7 @@ def print_all_validation_accuracies(train_df, test_df):
 
     from src.models.transformer import TextTransformer
     from src.models.bert import BertTransformer
-    from src.models.bert_segment_bias import BertSegmentBiasTransformer
+    from src.models.bert_attention_experiments import BertSepDistanceTransformer, BertRelSimpleTransformer
     from src.models.bertcounterfact import BertCounterFactTransformer
     from src.models.bertcounterfact_cross_option_competition import BertCounterFactCrossOpitionCompetitionTransformer
     from src.models.bertcounter_latent_edit_competition import BertCounterFactLatentEditCompetitionTransformer
@@ -502,8 +514,23 @@ def print_all_validation_accuracies(train_df, test_df):
             pooling=str(hp["pooling"]),
         )
 
-    def build_bert_segment_bias(hp, meta):
-        return BertSegmentBiasTransformer(
+    def build_bert_sepdist(hp, meta):
+        return BertSepDistanceTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_bert_relsimple(hp, meta):
+        return BertRelSimpleTransformer(
             vocab_size=int(meta["vocab_size"]),
             num_classes=1,
             pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
@@ -568,7 +595,9 @@ def print_all_validation_accuracies(train_df, test_df):
     grouped_runs = [
         ("transformer_bbpe", first_existing_matching(["checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt", "checkpoints/transformer_pairwise_best.pt", "checkpoints/transformer_pairwise.pt"], "plain_transformer"), first_existing_file(["checkpoints/transformer_bbpe_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_transformer, False),
         ("transformer_attentiontypes", first_existing_matching(["checkpoints/transformer_attentiontypes_best_acc.pt", "checkpoints/transformer_attentiontypes.pt", "checkpoints/transformer_attentiontypes_best_loss.pt", "checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt"], "deberta_like"), first_existing_file(["checkpoints/transformer_attentiontypes_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_bert, False),
-        ("transformer_attention_segment_bias", first_existing(["checkpoints/transformer_attention_segment_bias_best_acc.pt", "checkpoints/transformer_attention_segment_bias.pt", "checkpoints/transformer_attention_segment_bias_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_segment_bias_hparams.json"]), build_bert_segment_bias, False),
+        ("transformer_attentiontypes_2", first_existing(["checkpoints/transformer_attentiontypes_2_best_acc.pt", "checkpoints/transformer_attentiontypes_2.pt", "checkpoints/transformer_attentiontypes_2_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attentiontypes_2_hparams.json"]), build_bert, False),
+        ("transformer_attention_sepdist", first_existing(["checkpoints/transformer_attention_sepdist_best_acc.pt", "checkpoints/transformer_attention_sepdist.pt", "checkpoints/transformer_attention_sepdist_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_sepdist_hparams.json"]), build_bert_sepdist, False),
+        ("transformer_attention_relsimple", first_existing(["checkpoints/transformer_attention_relsimple_best_acc.pt", "checkpoints/transformer_attention_relsimple.pt", "checkpoints/transformer_attention_relsimple_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_relsimple_hparams.json"]), build_bert_relsimple, False),
         ("transformer_bertcounterfact", first_existing(["checkpoints/transformer_bertcounterfact_best_acc.pt", "checkpoints/transformer_bertcounterfact.pt", "checkpoints/transformer_bertcounterfact_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounterfact_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_counterfact, False),
         ("transformer_bertcounter_cross_option", first_existing(["checkpoints/transformer_bertcounter_cross_option_best_acc.pt", "checkpoints/transformer_bertcounter_cross_option.pt", "checkpoints/transformer_bertcounter_cross_option_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_cross_option_hparams.json"]), build_cross_option, True),
         ("transformer_bertcounter_lec", first_existing(["checkpoints/transformer_bertcounter_LEC_best_acc.pt", "checkpoints/transformer_bertcounter_LEC.pt", "checkpoints/transformer_bertcounter_LEC_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_LEC_hparams.json"]), build_lec, True),
@@ -857,7 +886,7 @@ def main():
     _make_submission_transformer_bbpe(train_df, test_df, out_dir)
 
     from src.models.bert import BertTransformer
-    from src.models.bert_segment_bias import BertSegmentBiasTransformer
+    from src.models.bert_attention_experiments import BertSepDistanceTransformer, BertRelSimpleTransformer
     from src.models.bertcounterfact import BertCounterFactTransformer
     from src.models.bertcounterfact_cross_option_competition import BertCounterFactCrossOpitionCompetitionTransformer
     from src.models.bertcounter_latent_edit_competition import BertCounterFactLatentEditCompetitionTransformer
@@ -876,8 +905,23 @@ def main():
             pooling=str(hp["pooling"]),
         )
 
-    def build_bert_segment_bias(hp, meta):
-        return BertSegmentBiasTransformer(
+    def build_bert_sepdist(hp, meta):
+        return BertSepDistanceTransformer(
+            vocab_size=int(meta["vocab_size"]),
+            num_classes=1,
+            pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
+            sep_idx=int(hp.get("sep_idx", meta.get("sep_id", 2))),
+            model_dim=int(hp["model_dim"]),
+            num_heads=int(hp["num_heads"]),
+            num_layers=int(hp["num_layers"]),
+            ff_mult=int(hp["ff_mult"]),
+            dropout=float(hp["dropout"]),
+            max_len=int(hp["max_len"]),
+            pooling=str(hp["pooling"]),
+        )
+
+    def build_bert_relsimple(hp, meta):
+        return BertRelSimpleTransformer(
             vocab_size=int(meta["vocab_size"]),
             num_classes=1,
             pad_idx=int(hp.get("pad_idx", meta.get("pad_id", 0))),
@@ -941,7 +985,9 @@ def main():
 
     grouped_submissions = [
         ("transformer_attentiontypes", first_existing_matching(["checkpoints/transformer_attentiontypes_best_acc.pt", "checkpoints/transformer_attentiontypes.pt", "checkpoints/transformer_attentiontypes_best_loss.pt", "checkpoints/transformer_best_acc.pt", "checkpoints/transformer_best_loss.pt"], "deberta_like"), first_existing_file(["checkpoints/transformer_attentiontypes_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_bert, "submission_transformer_attentiontypes.csv", False),
-        ("transformer_attention_segment_bias", first_existing(["checkpoints/transformer_attention_segment_bias_best_acc.pt", "checkpoints/transformer_attention_segment_bias.pt", "checkpoints/transformer_attention_segment_bias_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_segment_bias_hparams.json"]), build_bert_segment_bias, "submission_transformer_attention_segment_bias.csv", False),
+        ("transformer_attentiontypes_2", first_existing(["checkpoints/transformer_attentiontypes_2_best_acc.pt", "checkpoints/transformer_attentiontypes_2.pt", "checkpoints/transformer_attentiontypes_2_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attentiontypes_2_hparams.json"]), build_bert, "submission_transformer_attentiontypes_2.csv", False),
+        ("transformer_attention_sepdist", first_existing(["checkpoints/transformer_attention_sepdist_best_acc.pt", "checkpoints/transformer_attention_sepdist.pt", "checkpoints/transformer_attention_sepdist_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_sepdist_hparams.json"]), build_bert_sepdist, "submission_transformer_attention_sepdist.csv", False),
+        ("transformer_attention_relsimple", first_existing(["checkpoints/transformer_attention_relsimple_best_acc.pt", "checkpoints/transformer_attention_relsimple.pt", "checkpoints/transformer_attention_relsimple_best_loss.pt"]), first_existing_file(["checkpoints/transformer_attention_relsimple_hparams.json"]), build_bert_relsimple, "submission_transformer_attention_relsimple.csv", False),
         ("transformer_bertcounterfact", first_existing(["checkpoints/transformer_bertcounterfact_best_acc.pt", "checkpoints/transformer_bertcounterfact.pt", "checkpoints/transformer_bertcounterfact_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounterfact_hparams.json", "checkpoints/transformer_pairwise_hparams.json"]), build_counterfact, "submission_transformer_bertcounterfact.csv", False),
         ("transformer_bertcounter_cross_option", first_existing(["checkpoints/transformer_bertcounter_cross_option_best_acc.pt", "checkpoints/transformer_bertcounter_cross_option.pt", "checkpoints/transformer_bertcounter_cross_option_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_cross_option_hparams.json"]), build_cross_option, "submission_transformer_bertcounter_cross_option.csv", True),
         ("transformer_bertcounter_lec", first_existing(["checkpoints/transformer_bertcounter_LEC_best_acc.pt", "checkpoints/transformer_bertcounter_LEC.pt", "checkpoints/transformer_bertcounter_LEC_best_loss.pt"]), first_existing_file(["checkpoints/transformer_bertcounter_LEC_hparams.json"]), build_lec, "submission_transformer_bertcounter_lec.csv", True),

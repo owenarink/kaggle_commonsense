@@ -1,0 +1,20 @@
+\documentclass[tikz,border=8pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,calc}
+\begin{document}
+\begin{tikzpicture}[
+    layer/.style={draw=black!80, thick, fill=blue!12, minimum width=2.8cm, minimum height=1.2cm, align=center},
+    biglayer/.style={draw=black!80, thick, fill=teal!14, minimum width=3.2cm, minimum height=2.4cm, align=center},
+    arrow/.style={-latex, thick}
+]
+\node[align=center,font=\bfseries\Large] at (8,3.8) {MLP Pairwise};
+
+\node[layer] (l0) at (0.00,0) {Input\\ [batch, vocab]};
+\node[layer] (l1) at (3.35,0) {TF-IDF Pair Features\\ FalseSent [SEP] Option};
+\node[layer] (l2) at (6.70,0) {Dense 64\\ ReLU};
+\node[layer] (l3) at (10.05,0) {Binary Score Head\\ 1 logit};
+\draw[arrow] (l0.east) -- (l1.west);
+\draw[arrow] (l1.east) -- (l2.west);
+\draw[arrow] (l2.east) -- (l3.west);
+\end{tikzpicture}
+\end{document}

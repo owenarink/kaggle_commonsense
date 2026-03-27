@@ -1,0 +1,17 @@
+digraph transformer_bertcounter_cross_option {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="CounterFact Cross Option\nAdds explicit cross-option competition on top of counterfactual repair features." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="Shared Encoder\nDeBERTa-like x4" fillcolor="#457B9D"]
+	n0 -> n1
+	n2 [label="Repair Module\noption-local repair vectors" fillcolor="#BC6C25"]
+	n1 -> n2
+	n3 [label="Cross-Option Competition\nrival-aware comparison" fillcolor="#BC6C25"]
+	n2 -> n3
+	n4 [label="Final Projection\n3D -> D" fillcolor="#B56576"]
+	n3 -> n4
+	n5 [label="Grouped Score Head\n3 scores" fillcolor="#E63946"]
+	n4 -> n5
+}

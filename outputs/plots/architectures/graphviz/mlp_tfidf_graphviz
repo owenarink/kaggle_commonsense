@@ -1,0 +1,13 @@
+digraph mlp_tfidf {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="MLP TF-IDF\nSparse TF-IDF baseline with a single hidden dense layer." labelloc=t
+	n0 [label="Input\n[batch, vocab]" fillcolor="#F6BD60"]
+	n1 [label="TF-IDF Features\nbinary unigram+bigram" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Dense 64\nReLU" fillcolor="#B56576"]
+	n1 -> n2
+	n3 [label="Classifier\n3 logits" fillcolor="#E63946"]
+	n2 -> n3
+}

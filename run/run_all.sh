@@ -37,20 +37,21 @@ run_step_chatty() {
   echo
 }
 
-run_step_quiet  "1/12 src.processing"                          python -m src.processing
-run_step_quiet  "2/12 src.features.tfidf"                      python -m src.features.tfidf
+run_step_quiet  "1/13 src.processing"                          python -m src.processing
+run_step_quiet  "2/13 src.features.tfidf"                      python -m src.features.tfidf
 
-run_step_chatty "3/12 src.train_model"                         python -m src.train_model
-run_step_chatty "4/12 src.train_model_wPairwise"               python -m src.train_model_wPairwise
+run_step_chatty "3/13 src.train_model"                         python -m src.train_model
+run_step_chatty "4/13 src.train_model_wPairwise"               python -m src.train_model_wPairwise
 
-run_step_quiet  "5/12 src.models.cnn_text"                     python -m src.models.cnn_text
-run_step_chatty "6/12 src.train_model_cnn"                     python -m src.train_model_cnn
+run_step_quiet  "5/13 src.models.cnn_text"                     python -m src.models.cnn_text
+run_step_chatty "6/13 src.train_model_cnn"                     python -m src.train_model_cnn
 
-run_step_quiet  "7/12 plot_confusion_mlp_pairwise"             python -m src.analysis.plot_confusion_mlp_pairwise
-run_step_quiet  "8/12 plot_feature_stats_mlp_pairwise"         python -m src.analysis.plot_feature_stats_mlp_pairwise
-run_step_quiet  "9/12 plot_confusion"                          python -m src.analysis.plot_confusion
-run_step_quiet  "10/12 plot_feature_stats"                     python -m src.analysis.plot_feature_stats
-run_step_quiet  "11/12 print_category_accuracy"                python -m src.analysis.print_category_accuracy
-run_step_quiet  "12/12 print_pairwise_category_accuracy"       python -m src.analysis.print_pairwise_category_accuracy
+run_step_quiet  "7/13 plot_confusion_mlp_pairwise"             python -m src.analysis.plot_confusion_mlp_pairwise
+run_step_quiet  "8/13 plot_feature_stats_mlp_pairwise"         python -m src.analysis.plot_feature_stats_mlp_pairwise
+run_step_quiet  "9/13 plot_confusion"                          python -m src.analysis.plot_confusion
+run_step_quiet  "10/13 plot_feature_stats"                     python -m src.analysis.plot_feature_stats
+run_step_quiet  "11/13 plot_loss_landscapes"                   python -m src.analysis.plot_loss_landscapes
+run_step_quiet  "12/13 print_category_accuracy"                python -m src.analysis.print_category_accuracy
+run_step_quiet  "13/13 print_pairwise_category_accuracy"       python -m src.analysis.print_pairwise_category_accuracy
 
 echo "All steps completed. 🍺"

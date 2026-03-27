@@ -1,0 +1,21 @@
+digraph transformer_bbpe {
+	bgcolor="#FCFBF7" nodesep=0.45 pad=0.4 rankdir=LR ranksep=0.75 splines=polyline
+	node [color="#2B2D42" fontname=Helvetica fontsize=12 shape=box style="rounded,filled"]
+	edge [arrowsize=0.8 color="#6C757D" penwidth=1.6]
+	fontname="Helvetica-Bold" fontsize=20 label="Transformer BBPE\nGrouped transformer scorer over three options using BBPE tokenization." labelloc=t
+	n0 [label="Grouped Token IDs\n[batch, 3, seq]" fillcolor="#F6BD60"]
+	n1 [label="BBPE Tokenizer\n12k vocab" fillcolor="#84A59D"]
+	n0 -> n1
+	n2 [label="Embedding\n256-d" fillcolor="#6D597A"]
+	n1 -> n2
+	n3 [label="Absolute Positional Encoding\nsin/cos" fillcolor="#4D908E"]
+	n2 -> n3
+	n4 [label="Transformer Encoder x4\n8 heads" fillcolor="#457B9D"]
+	n3 -> n4
+	n5 [label="Mean Pool\nper option" fillcolor="#F28482"]
+	n4 -> n5
+	n6 [label="Score Head\n1 logit / option" fillcolor="#E63946"]
+	n5 -> n6
+	n7 [label="Cross-Entropy over 3\ngrouped choice" fillcolor="#9A031E"]
+	n6 -> n7
+}
