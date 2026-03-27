@@ -4,6 +4,20 @@ Course project for a Kaggle-style commonsense reasoning challenge. The task is t
 
 This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs. The main model explored here is a grouped BBPE transformer with DeBERTa-inspired disentangled attention.
 
+## Example Task
+
+One question in this challenge has the following form:
+
+**False sentence:** `The sun rises in the west.`
+
+**Candidate answers:**
+
+- `A`: `The sun rises in the east.`
+- `B`: `The sun sets in the west.`
+- `C`: `The sun shines at night.`
+
+The correct answer is `A`. The model must learn which candidate best repairs the false statement.
+
 ## Highlights
 
 - Multiple baselines and transformer variants for commonsense reasoning
@@ -87,6 +101,29 @@ s_k = f_{\mathrm{MLP}}(x_k), \qquad \hat{y} = \arg\max_k s_k
 $$
 
 where `x_k` is the TF-IDF vector for `(false sentence [SEP] option_k)`.
+
+**Pairwise CNN**
+
+The text CNN first embeds tokens, applies 1D convolutions and residual blocks, then pools the sequence into one vector:
+
+$$
+E = \mathrm{Embed}(x_{1:L})
+$$
+
+$$
+H^{(1)} = \mathrm{Conv1D}(E), \qquad
+H^{(\ell+1)} = \mathrm{ResBlock}(H^{(\ell)})
+$$
+
+$$
+h = \mathrm{MaxPool}(H^{(L_{\mathrm{cnn}})})
+$$
+
+$$
+s_k = W h_k + b, \qquad \hat{y} = \arg\max_k s_k
+$$
+
+Like the pairwise MLP, the CNN scores each `(false sentence, option)` pair separately and selects the highest-scoring option.
 
 ## Core Equations
 
@@ -293,6 +330,17 @@ The edit vector is shared, while each option competes to explain the repaired fa
   </tr>
 </table>
 
+**3D directional bias**
+
+<table>
+  <tr>
+    <td><img src="outputs/plots/readme/attentiontypes_offset_asymmetry_surface.png" alt="Offset asymmetry surface" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">How strongly the model distinguishes tokens before vs after a reference position</td>
+  </tr>
+</table>
+
 **Optimization diagnostics**
 
 <table>
@@ -340,6 +388,7 @@ The table below summarizes the archived validation scores from the saved compari
 | --- | ---: |
 | MLP + TF-IDF | 0.3338 |
 | Pairwise MLP | 0.7100 |
+| Pairwise CNN | 0.6694 |
 | Transformer BBPE | 0.7300 |
 | AttentionTypes | 0.7456 |
 | Counterfactual Repair | 0.7400 |
