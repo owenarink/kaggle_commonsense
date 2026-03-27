@@ -4,6 +4,16 @@ Course project for a Kaggle-style commonsense reasoning challenge. The task is t
 
 This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs used for the project and poster.
 
+## Visual Overview
+
+**Model overview**
+
+![Model overview](outputs/plots/poster_panels/transformer_encoder_stack_panel.png)
+
+**Loss landscape**
+
+![Loss landscape](outputs/plots/loss_landscapes/transformer_attentiontypes_loss_landscape.png)
+
 ## Project Focus
 
 - Build and compare neural approaches for sentence-level commonsense reasoning
@@ -13,11 +23,11 @@ This repository contains baseline models, transformer-based experiments, custom 
 
 ## Repository Structure
 
-- [`src/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/src): training, evaluation, preprocessing, models, and analysis code
-- [`data/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/data): training/test data and sample submission files
-- [`checkpoints/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/checkpoints): saved model weights and tokenizer metadata
-- [`outputs/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/outputs): generated plots and architecture visualizations
-- [`docs/`](/Users/owenarink/Documents/University/neuralnets101/kaggle_commonsense/docs): supporting notes
+- `src/`: training, evaluation, preprocessing, models, and analysis code
+- `data/`: training/test data and sample submission files
+- `checkpoints/`: saved model weights and tokenizer metadata
+- `outputs/`: generated plots and architecture visualizations
+- `docs/`: supporting notes
 
 ## Main Result
 
