@@ -29,6 +29,8 @@ The correct answer is `A`. The model must learn which candidate best repairs the
 
 The strongest final experiment in this repo is the grouped BBPE `AttentionTypes` model. It reached a best validation accuracy of `0.7456` and a final Kaggle public score of `0.7350`.
 
+Hugging Face model: `https://huggingface.co/owenarink/attentiontypes-commonsense`
+
 ## Competition-Style Summary
 
 - Input: one false sentence with three candidate corrections
