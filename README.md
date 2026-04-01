@@ -1,5 +1,7 @@
 # Commonsense Reasoning with Neural Networks
 
+`kaggle_commonsense` | GitHub: `https://github.com/owenarink/kaggle_commonsense` | Hugging Face: `https://huggingface.co/owenarink/attentiontypes-commonsense`
+
 Course project for a Kaggle-style commonsense reasoning challenge. The task is to select the correct answer (`A`, `B`, or `C`) for a false sentence by comparing candidate options and training neural models to recover the sensible statement.
 
 This repository contains baseline models, transformer-based experiments, custom tokenization, evaluation scripts, saved checkpoints, and analysis/visualization outputs. The main model explored here is a grouped BBPE transformer with DeBERTa-inspired disentangled attention.
@@ -28,8 +30,6 @@ The correct answer is `A`. The model must learn which candidate best repairs the
 ## Result
 
 The strongest final experiment in this repo is the grouped BBPE `AttentionTypes` model. It reached a best validation accuracy of `0.7456` and a final Kaggle public score of `0.7350`.
-
-Hugging Face model: `https://huggingface.co/owenarink/attentiontypes-commonsense`
 
 ## Competition-Style Summary
 
