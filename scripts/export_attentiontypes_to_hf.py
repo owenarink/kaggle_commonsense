@@ -29,6 +29,7 @@ DATASET_FILES = [
     "test_data.csv",
     "sample.csv",
 ]
+DEFAULT_DATASET_REPO_ID = "owenarink/kaggle-commonsense"
 
 
 MODEL_CARD_TEMPLATE = """---
@@ -44,7 +45,7 @@ tags:
 - course-project
 - experimental
 datasets:
-- local-course-competition-dataset
+- {dataset_repo_id}
 ---
 
 # {repo_name}
@@ -192,6 +193,7 @@ def parse_args():
     parser.add_argument("--tokenizer", default=str(DEFAULT_TOKENIZER))
     parser.add_argument("--tokenizer-meta", default=str(DEFAULT_TOKENIZER_META))
     parser.add_argument("--repo-id", default="your-username/attentiontypes-commonsense")
+    parser.add_argument("--dataset-repo-id", default=DEFAULT_DATASET_REPO_ID)
     parser.add_argument("--push", action="store_true")
     parser.add_argument("--private", action="store_true")
     return parser.parse_args()
@@ -275,6 +277,7 @@ def export_model(args):
     readme = MODEL_CARD_TEMPLATE.format(
         repo_name=args.repo_id.split("/")[-1],
         repo_id=args.repo_id,
+        dataset_repo_id=args.dataset_repo_id,
         vocab_size=config.vocab_size,
         model_dim=config.model_dim,
         num_heads=config.num_heads,
